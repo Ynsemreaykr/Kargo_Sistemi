@@ -1,0 +1,135 @@
+    <!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kargo İşletme Sistemi - Kocaeli Üniversitesi</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>🚚 Kargo İşletme Sistemi</h1>
+            <p>Kocaeli Üniversitesi - Yazılım Laboratuvarı III</p>
+        </div>
+        <div class="header-badge">
+            <span class="badge">AŞAMA 2</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Control Panel -->
+        <aside class="control-panel">
+            <div class="panel-section">
+                <h2>📦 Senaryo Oluştur</h2>
+
+                <!-- Scenario Type -->
+                <div class="form-group">
+                    <label for="scenarioType">Senaryo Tipi</label>
+                    <select id="scenarioType" class="form-control">
+                        <option value="LIMITED">Sınırlı Araç (LIMITED)</option>
+                        <option value="UNLIMITED">Sınırsız Araç (UNLIMITED)</option>
+                    </select>
+                </div>
+
+                <!-- Cargo List -->
+                <div class="form-group">
+                    <label>Kargolar</label>
+                    <div id="cargoList" class="cargo-list">
+                        <!-- Cargo rows will be added here dynamically -->
+                    </div>
+                    <button id="addCargoBtn" class="btn btn-secondary">
+                        <span>➕</span> Kargo Ekle
+                    </button>
+                </div>
+
+                <!-- Create Scenario Button -->
+                <button id="createScenarioBtn" class="btn btn-primary">
+                    <span>🚀</span> Senaryo Oluştur
+                </button>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="loading-state" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Senaryo oluşturuluyor...</p>
+                </div>
+
+                <!-- Results -->
+                <div id="resultsPanel" class="results-panel" style="display: none;">
+                    <h3>📊 Sonuçlar</h3>
+                    <div class="result-item">
+                        <span class="result-label">Toplam Maliyet:</span>
+                        <span id="totalCost" class="result-value">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Toplam Mesafe:</span>
+                        <span id="totalDistance" class="result-value">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Rota Sayısı:</span>
+                        <span id="routeCount" class="result-value">-</span>
+                    </div>
+                    <button id="clearMapBtn" class="btn btn-secondary btn-small">
+                        🗑️ Haritayı Temizle
+                    </button>
+                </div>
+            </div>
+
+            <!-- Info Section -->
+            <div class="panel-section info-section">
+                <h3>ℹ️ Bilgi</h3>
+                <p class="info-text">
+                    <strong>AŞAMA 2:</strong> Bu aşamada dummy (sahte) rotalar üretilir.
+                    Gerçek algoritma AŞAMA 3'te eklenecektir.
+                </p>
+                <p class="info-text">
+                    <strong>Rota Modeli:</strong> Başlangıç → Hedef ilçeler (açık rota, dönüş yok)
+                </p>
+            </div>
+        </aside>
+
+        <!-- Map Container -->
+        <main class="map-container">
+            <div id="map"></div>
+            <div class="map-legend">
+                <h4>Harita Göstergeleri</h4>
+                <div class="legend-item">
+                    <span class="legend-marker district"></span>
+                    <span>İlçe Merkezi</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-line route1"></span>
+                    <span>Rota 1</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-line route2"></span>
+                    <span>Rota 2</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-line route3"></span>
+                    <span>Rota 3</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Custom JS -->
+    <script src="app.js"></script>
+</body>
+
+</html>
