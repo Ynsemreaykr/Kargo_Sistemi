@@ -1,295 +1,209 @@
-# Kargo İşletme Sistemi
+# 🚚 Kargo İşletme Sistemi
 
-Kocaeli Üniversitesi - Bilgisayar Mühendisliği  
-Yazılım Laboratuvarı III (2025-2026 Güz)
+Kocaeli Üniversitesi - Yazılım Laboratuvarı III  
+Kocaeli ilçeleri arasında kargo optimizasyon sistemi
 
-## Proje Hakkında
+---
 
-Kocaeli iline ait ilçe merkezleri (istasyonlar) arasında bulunan kargoların, kargo araçları ile en düşük maliyet ve en uygun rota üzerinden taşınmasını sağlayan web tabanlı bir sistem.
+## 📥 GitHub'dan İlk Kurulum
 
-### Önemli Kavramlar
+Projeyi yeni klonladıysanız, **sırasıyla** şu adımları izleyin:
 
-- **İstasyonlar**: Kocaeli ilçe merkezleri (Başiskele, Çayırova, Darıca, Derince, Dilovası, Gebze, Gölcük, Kandıra, Karamürsel, Kartepe, Körfez, İzmit)
-- **Rota Modeli**: İlk istasyon → Diğer istasyonlar → İlk istasyona dönüş (kapalı döngü)
-- **Senaryo Tipleri**: 
-  - LIMITED: Sınırlı araç sayısı
-  - UNLIMITED: Sınırsız araç kullanımı
-
-## Proje Aşamaları
-
-- ✅ **AŞAMA 0**: Veritabanı ve proje iskeleti
-- ✅ **AŞAMA 1**: Backend (algoritmasız, sağlam API)
-- ⏳ **AŞAMA 2**: Frontend ve harita (test ve görselleştirme)
-- ⏳ **AŞAMA 3**: Algoritma (sınırlı / sınırsız araç problemleri)
-- ⏳ **AŞAMA 4**: Gerçek yol (OSM) ve ileri optimizasyon
-
-**Şu anki durum**: AŞAMA 1 tamamlandı
-
-## Kurulum
-
-### 1. Gereksinimler
-
-- Python 3.8+
-- PostgreSQL 12+
-- pip (Python paket yöneticisi)
-
-### 2. PostgreSQL Kurulumu
-
+### 1️⃣ Python Bağımlılıklarını Yükle
 ```bash
-# PostgreSQL kurulumunu yapın (Windows için PostgreSQL installer)
-# Veritabanı oluşturun:
-createdb kargo_db
-```
-
-### 3. Veritabanı Şemasını Yükleyin
-
-```bash
-# Şemayı yükle
-psql -d kargo_db -f database/schema.sql
-
-# Başlangıç verilerini yükle
-psql -d kargo_db -f database/seed_data.sql
-```
-
-### 4. Python Bağımlılıklarını Yükleyin
-
-```bash
-# Virtual environment oluşturun (opsiyonel ama önerilir)
-python -m venv venv
-venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Linux/Mac
-
-# Bağımlılıkları yükleyin
 pip install -r requirements.txt
 ```
 
-### 5. Veritabanı Bağlantı Ayarları
+### 2️⃣ PostgreSQL Veritabanını Hazırla
 
-`api` klasöründe `.env` dosyası oluşturun (veya `.env.example` dosyasını kopyalayın):
+**a) PostgreSQL'de veritabanı oluştur:**
+```sql
+CREATE DATABASE kargo_db;
+```
 
+**b) Şemaları yükle:**
+```bash
+psql -U postgres -d kargo_db -f database/schema.sql
+psql -U postgres -d kargo_db -f database/seed_data.sql
+```
+
+### 3️⃣ Veritabanı Bağlantı Ayarları
+
+`api/.env` dosyası oluştur:
 ```env
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=kargo_db
 DB_USER=postgres
-DB_PASSWORD=your_password_here
+DB_PASSWORD=sizin_postgresql_sifreniz
+SECRET_KEY=rastgele-gizli-anahtar-123
 ```
 
-**Önemli**: `DB_PASSWORD` değerini kendi PostgreSQL şifrenizle değiştirin!
+### 4️⃣ Kullanıcı Sistemini Kur
+```bash
+cd api
+python quick_setup.py
+```
 
-### 6. API'yi Başlatın
+Bu adım:
+- ✅ `users` tablosuna `password_hash` kolonu ekler
+- ✅ Varsayılan kullanıcıları oluşturur:
+  - 👑 Admin: `admin` / `admin123`
+  - 👤 User: `user` / `user123`
 
+---
+
+## 🚀 Kullanım
+
+### Kolay Yol (Windows):
+```bash
+start.bat
+```
+Bu komut hem backend'i hem frontend'i başlatır ve tarayıcıda login sayfasını açar.
+
+### Manuel Yol:
+
+**Terminal 1 - Backend:**
 ```bash
 cd api
 python app.py
 ```
 
-API şu adreste çalışacaktır: `http://localhost:5000`
-
-## API Endpoint'leri
-
-### 1. İlçeleri Listele
-
-```http
-GET /api/districts
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "name": "İzmit",
-      "latitude": 40.7654,
-      "longitude": 29.9401
-    },
-    ...
-  ]
-}
-```
-
-### 2. Senaryo Oluştur
-
-```http
-POST /api/scenarios
-Content-Type: application/json
-
-{
-  "scenario_type": "LIMITED",
-  "cargos": [
-    {
-      "district_id": 1,
-      "weight_kg": 100,
-      "quantity": 2
-    },
-    {
-      "district_id": 5,
-      "weight_kg": 150,
-      "quantity": 3
-    }
-  ]
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "scenario_id": 1,
-    "total_cost": 450.50,
-    "total_distance": 120.5,
-    "route_count": 2
-  }
-}
-```
-
-### 3. Senaryo Detayı
-
-```http
-GET /api/scenarios/1
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "scenario_type": "LIMITED",
-    "total_cost": 450.50,
-    "total_distance": 120.5,
-    "routes": [...]
-  }
-}
-```
-
-### 4. Rotaları Getir
-
-```http
-GET /api/routes/1
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "vehicle_id": 1,
-      "distance": 45.5,
-      "cost": 250.0,
-      "stops": [...]
-    }
-  ]
-}
-```
-
-### 5. Sistem Parametreleri
-
-```http
-GET /api/system-parameters
-```
-
-## Test Etme
-
-### curl ile Test
-
+**Terminal 2 - Frontend:**
 ```bash
-# İlçeleri listele
-curl http://localhost:5000/api/districts
-
-# Senaryo oluştur
-curl -X POST http://localhost:5000/api/scenarios \
-  -H "Content-Type: application/json" \
-  -d "{\"scenario_type\":\"LIMITED\",\"cargos\":[{\"district_id\":1,\"weight_kg\":100,\"quantity\":2}]}"
-
-# Senaryo detayı
-curl http://localhost:5000/api/scenarios/1
+cd frontend
+python -m http.server 8000
 ```
 
-### Postman ile Test
-
-1. Postman'i açın
-2. Yeni bir request oluşturun
-3. Yukarıdaki endpoint'leri test edin
-
-## Proje Yapısı
-
+**Tarayıcı:**
 ```
-lab3/
-├── api/
-│   ├── app.py              # Flask ana dosyası
-│   ├── config.py           # Veritabanı yapılandırması
-│   ├── routes.py           # API endpoint'leri
-│   └── utils.py            # Yardımcı fonksiyonlar
-├── database/
-│   ├── schema.sql          # Veritabanı şeması
-│   └── seed_data.sql       # Başlangıç verileri
-├── requirements.txt        # Python bağımlılıkları
-└── README.md               # Bu dosya
+http://localhost:8000/login.html
 ```
 
-## Önemli Notlar
+---
 
-### AŞAMA 1 Hakkında
+## 🎯 Varsayılan Kullanıcılar
 
-⚠️ **Bu aşamada gerçek algoritma YOKTUR!**
+| Kullanıcı | Şifre | Rol | Sayfa |
+|-----------|-------|-----|-------|
+| admin | admin123 | ADMIN | admin.html (Admin Panel) |
+| user | user123 | USER | index.html (Kargo Sistemi) |
 
-- Rotalar rastgele (dummy) olarak üretilir
-- Amaç: API ve veritabanı yapısını test etmek
-- AŞAMA 3'te gerçek sezgisel algoritma eklenecektir
+---
 
-### Dummy Rota Mantığı
-
-1. Her kargo için rastgele bir araç atanır
-2. Her araç için basit bir rota oluşturulur
-3. Mesafe: Haversine formülü ile kuş uçuşu hesaplanır
-4. Maliyet: `(mesafe × cost_per_km) + rental_cost`
-
-## Sorun Giderme
-
-### Veritabanı Bağlantı Hatası
+## 📁 Proje Yapısı
 
 ```
-✗ Veritabanı bağlantı hatası: ...
+yazlab3/
+├── api/                    # Backend (Flask)
+│   ├── app.py             # Ana uygulama
+│   ├── auth.py            # Kimlik doğrulama
+│   ├── routes.py          # API endpoint'leri
+│   ├── config.py          # Veritabanı bağlantısı
+│   ├── quick_setup.py     # Kullanıcı kurulum scripti
+│   └── .env               # Veritabanı ayarları (oluşturulacak)
+│
+├── frontend/              # Frontend (HTML/CSS/JS)
+│   ├── login.html         # Giriş/Kayıt sayfası
+│   ├── index.html         # Kargo sistemi (User)
+│   ├── admin.html         # Admin paneli
+│   ├── app.js             # Ana JavaScript
+│   └── styles.css         # Stiller
+│
+├── database/              # Veritabanı şemaları
+│   ├── schema.sql         # Tablo yapıları
+│   ├── seed_data.sql      # Başlangıç verileri
+│   └── add_auth.sql       # Auth migration (manuel kullanım)
+│
+├── setup.bat              # İlk kurulum scripti
+├── start.bat              # Sistemi başlat
+├── requirements.txt       # Python bağımlılıkları
+└── README.md              # Bu dosya
 ```
+
+---
+
+## 🔧 Teknolojiler
+
+**Backend:**
+- Flask 3.0.0
+- PostgreSQL (psycopg 3.1.18)
+- Flask-Session (session-based auth)
+- Werkzeug (password hashing)
+
+**Frontend:**
+- Vanilla HTML/CSS/JavaScript
+- Leaflet.js (harita)
+- OpenStreetMap
+
+---
+
+## ⚙️ Özellikler
+
+- ✅ Session-based kimlik doğrulama
+- ✅ Admin ve User rolleri
+- ✅ Kullanıcı kayıt sistemi
+- ✅ Kargo senaryo oluşturma
+- ✅ Harita üzerinde rota görselleştirme
+- ✅ İlçeler arası mesafe hesaplama
+
+---
+
+## 🆘 Sorun Giderme
+
+### "Bağlantı hatası. Backend çalışıyor mu?"
 
 **Çözüm:**
-- PostgreSQL'in çalıştığından emin olun
-- `.env` dosyasındaki bağlantı bilgilerini kontrol edin
-- `kargo_db` veritabanının oluşturulduğundan emin olun
+1. Backend terminalini kontrol edin
+2. `http://localhost:5002` adresinde API çalışıyor mu?
+3. `.env` dosyasındaki veritabanı şifresi doğru mu?
 
-### Import Hatası
-
-```
-ModuleNotFoundError: No module named 'flask'
-```
+### "No module named 'psycopg'"
 
 **Çözüm:**
 ```bash
 pip install -r requirements.txt
 ```
 
-### Port Zaten Kullanımda
-
-```
-OSError: [Errno 98] Address already in use
-```
+### PostgreSQL bağlantı hatası
 
 **Çözüm:**
-- 5000 portunu kullanan başka bir uygulamayı kapatın
-- Veya `app.py` dosyasında portu değiştirin
+1. PostgreSQL servisi çalışıyor mu?
+2. `kargo_db` veritabanı oluşturulmuş mu?
+3. `api/.env` dosyasındaki bilgiler doğru mu?
 
-## Sonraki Adımlar
+---
 
-- [ ] AŞAMA 2: Frontend ve harita görselleştirme
-- [ ] AŞAMA 3: Gerçek algoritma implementasyonu
-- [ ] AŞAMA 4: OpenStreetMap entegrasyonu
+## 📝 Lisans
 
-## Lisans
+Kocaeli Üniversitesi - Yazılım Laboratuvarı III Projesi
 
-Bu proje Kocaeli Üniversitesi Yazılım Laboratuvarı III dersi kapsamında geliştirilmiştir.
+---
+
+## 👨‍💻 Geliştirme
+
+**Sadece iki .bat dosyası var:**
+
+1. **setup.bat** - İlk kurulum (sadece 1 kez)
+2. **start.bat** - Sistemi başlat (her seferinde)
+
+**Diğer kullanışlı komutlar:**
+
+```bash
+# Yeni dependency eklediyseniz
+pip freeze > requirements.txt
+
+# Veritabanını sıfırlamak isterseniz
+dropdb kargo_db
+createdb kargo_db
+psql -U postgres -d kargo_db -f database/schema.sql
+psql -U postgres -d kargo_db -f database/seed_data.sql
+python api/quick_setup.py
+```
+
+---
+
+**Session Davranışı:**
+- ✅ Tarayıcı açık olduğu sürece giriş yapılı kalır
+- ✅ Tarayıcı kapatılınca session sona erer
+- ✅ Yeniden açınca login ekranına yönlendirilir

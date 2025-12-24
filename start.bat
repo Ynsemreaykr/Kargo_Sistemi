@@ -26,6 +26,6 @@ echo Kapatmak icin her iki terminal penceresini kapatin
 echo ============================================================
 
 timeout /t 3 /nobreak >nul
-start http://localhost:8000
+start http://localhost:8000/login.html
 
 pause

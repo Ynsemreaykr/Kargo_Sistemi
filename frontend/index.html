@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 
 <head>
@@ -23,10 +23,21 @@
             <h1>🚚 Kargo İşletme Sistemi</h1>
             <p>Kocaeli Üniversitesi - Yazılım Laboratuvarı III</p>
         </div>
-        <div class="header-badge">
-            <span class="badge">AŞAMA 2</span>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" style="display: none;">
+                <span class="user-name" id="userName"></span>
+                <span class="user-role" id="userRole"></span>
+            </div>
+            <button class="logout-btn" id="logoutBtn" type="button">
+                <span class="logout-icon">🚪</span>
+                <span class="logout-text">Çıkış</span>
+            </button>
+            <div class="header-badge">
+                <span class="badge">AŞAMA 2</span>
+            </div>
         </div>
     </header>
+
 
     <!-- Main Container -->
     <div class="container">

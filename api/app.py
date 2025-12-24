@@ -9,18 +9,35 @@ AŞAMA 3'te gerçek algoritma entegre edilecektir.
 
 from flask import Flask
 from flask_cors import CORS
+from flask_session import Session
 from config import init_pool, close_pool
 from routes import api
+from auth import auth
 import atexit
+import os
+from datetime import timedelta
 
 # Flask uygulamasını oluştur
 app = Flask(__name__)
 
-# CORS ayarları (frontend'den erişim için)
-CORS(app)
+# Secret key for session
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'kargo-sistem-secret-key-2025')
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = False  # Browser kapanınca session bitsin
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-# Blueprint'i kaydet
+# Initialize session
+Session(app)
+
+
+# CORS ayarları (frontend'den erişim için)
+CORS(app, supports_credentials=True, origins=['http://localhost:8000', 'http://127.0.0.1:8000'])
+
+# Blueprint'leri kaydet
 app.register_blueprint(api, url_prefix='/api')
+app.register_blueprint(auth, url_prefix='/api/auth')
+
 
 # Ana sayfa
 @app.route('/')

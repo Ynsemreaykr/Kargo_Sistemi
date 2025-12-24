@@ -12,16 +12,82 @@ let districts = [];
 let currentRoutes = [];
 let routeLayers = [];
 let districtMarkers = [];
+let currentUser = null;
 
 // ===========================
 // Initialize App
 // ===========================
 document.addEventListener('DOMContentLoaded', () => {
-    initMap();
-    loadDistricts();
-    setupEventListeners();
-    addInitialCargoRow();
+    checkAuthentication();
 });
+
+async function checkAuthentication() {
+    try {
+        const response = await fetch(`${API_URL}/auth/status`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (!data.authenticated) {
+            // Not logged in, redirect to login
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // User is authenticated
+        currentUser = data.data;
+        displayUserInfo(currentUser);
+
+        // Setup logout button
+        setupLogoutButton();
+
+        // Initialize the app
+        initMap();
+        loadDistricts();
+        setupEventListeners();
+        addInitialCargoRow();
+
+    } catch (error) {
+        console.error('Auth check error:', error);
+        window.location.href = 'login.html';
+    }
+}
+
+function displayUserInfo(user) {
+    document.getElementById('userName').textContent = user.username;
+    document.getElementById('userRole').textContent = user.role === 'ADMIN' ? '👑 Admin' : '👤 Kullanıcı';
+    document.getElementById('userInfo').style.display = 'flex';
+    // Logout button zaten görünür
+}
+
+function setupLogoutButton() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+        console.log('✓ Logout button event listener attached');
+    }
+}
+
+async function handleLogout() {
+    console.log('Logout clicked!');
+
+    try {
+        await fetch(`${API_URL}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        console.log('✓ Logout API success');
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+
+    // Clear local state
+    currentUser = null;
+
+    // Redirect to login
+    window.location.href = 'login.html';
+}
+
 
 // ===========================
 // Map Initialization
@@ -42,7 +108,7 @@ function initMap() {
 // ===========================
 async function loadDistricts() {
     try {
-        const response = await fetch(`${API_URL}/districts`);
+        const response = await fetch(`${API_URL}/districts`, { credentials: 'include' });
         const data = await response.json();
 
         if (data.success) {
@@ -193,6 +259,7 @@ async function createScenario() {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
                 scenario_type: scenarioType,
                 cargos: cargos
@@ -221,7 +288,7 @@ async function createScenario() {
 // ===========================
 async function loadAndDisplayRoutes(scenarioId) {
     try {
-        const response = await fetch(`${API_URL}/routes/${scenarioId}`);
+        const response = await fetch(`${API_URL}/routes/${scenarioId}`, { credentials: 'include' });
         const data = await response.json();
 
         if (data.success) {

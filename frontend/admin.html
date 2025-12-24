@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Kargo İşletme Sistemi</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .welcome-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .welcome-card h2 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-card p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .dashboard-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .dashboard-card p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .quick-link {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .quick-link:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>👑 Admin Panel</h1>
+            <p>Kargo İşletme Sistemi - Yönetim Paneli</p>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" style="display: none;">
+                <span class="user-name" id="userName"></span>
+                <span class="user-role" id="userRole"></span>
+            </div>
+            <button class="logout-btn" id="logoutBtn" type="button">
+                <span class="logout-icon">🚪</span>
+                <span class="logout-text">Çıkış</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="admin-container">
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <h2>Hoş Geldiniz, <span id="adminName">Admin</span>!</h2>
+            <p>Kargo İşletme Sistemi yönetim paneline hoş geldiniz.</p>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Cargo Management -->
+            <div class="dashboard-card">
+                <h3>🚚 Kargo Yönetimi</h3>
+                <p>Tüm kargoları görüntüleyin ve yönetin. Yeni kargolar ekleyin, mevcut kargoları düzenleyin.</p>
+                <a href="index.html" class="quick-link">Kargo Sistemine Git →</a>
+            </div>
+
+            <!-- User Management -->
+            <div class="dashboard-card">
+                <h3>👥 Kullanıcı Yönetimi</h3>
+                <p>Sistem kullanıcılarını görüntüleyin, yeni kullanıcılar ekleyin ve yetkileri düzenleyin.</p>
+                <a href="#" class="quick-link">Yakında...</a>
+            </div>
+
+            <!-- Reports -->
+            <div class="dashboard-card">
+                <h3>📊 Raporlar</h3>
+                <p>Detaylı raporlar oluşturun, istatistikleri görüntüleyin ve analiz yapın.</p>
+                <a href="#" class="quick-link">Yakında...</a>
+            </div>
+
+            <!-- System Settings -->
+            <div class="dashboard-card">
+                <h3>⚙️ Sistem Ayarları</h3>
+                <p>Sistem parametrelerini düzenleyin, araç tiplerini ve maliyetleri ayarlayın.</p>
+                <a href="#" class="quick-link">Yakında...</a>
+            </div>
+
+            <!-- Database -->
+            <div class="dashboard-card">
+                <h3>🗄️ Veritabanı</h3>
+                <p>Veritabanı yedeklemesi alın, veri tutarlılığını kontrol edin.</p>
+                <a href="#" class="quick-link">Yakında...</a>
+            </div>
+
+            <!-- Logs -->
+            <div class="dashboard-card">
+                <h3>📝 Sistem Logları</h3>
+                <p>Sistem loglarını görüntüleyin, hata kayıtlarını inceleyin.</p>
+                <a href="#" class="quick-link">Yakında...</a>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="panel-section info-section">
+            <h3>ℹ️ Bilgi</h3>
+            <p class="info-text">
+                <strong>AŞAMA 2:</strong> Bu admin paneli temel özellikleri içermektedir.
+                Gelecek aşamalarda kullanıcı yönetimi, raporlama ve analiz özellikleri eklenecektir.
+            </p>
+            <p class="info-text">
+                <strong>Kullanıcı Sayfası:</strong> Normal kullanıcılar için kargo oluşturma sayfası mevcuttur.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5002/api';
+        let currentUser = null;
+
+        // Check authentication on load
+        async function checkAuthentication() {
+            try {
+                const response = await fetch(`${API_URL}/auth/status`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (!data.authenticated) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                currentUser = data.data;
+
+                // Check if user is admin
+                if (currentUser.role !== 'ADMIN') {
+                    // Not admin, redirect to user page
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                displayUserInfo(currentUser);
+
+            } catch (error) {
+                console.error('Auth check error:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        function displayUserInfo(user) {
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userRole').textContent = '👑 Admin';
+            document.getElementById('adminName').textContent = user.username;
+            document.getElementById('userInfo').style.display = 'flex';
+
+            // Setup logout button
+            setupLogoutButton();
+        }
+
+        function setupLogoutButton() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+                console.log('✓ Admin logout button event listener attached');
+            }
+        }
+
+        async function handleLogout() {
+            console.log('Admin logout clicked!');
+
+            try {
+                await fetch(`${API_URL}/auth/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                console.log('✓ Logout API success');
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+
+            window.location.href = 'login.html';
+        }
+
+        // Run on load
+        checkAuthentication();
+    </script>
+</body>
+
+</html>
