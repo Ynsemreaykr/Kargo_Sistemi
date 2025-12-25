@@ -159,7 +159,7 @@ def register():
                 'error': 'Bu kullanıcı adı zaten kullanılıyor'
             }), 409
         
-        # Şifreyi hashle
+        # Hash password
         password_hash = generate_password_hash(password)
         
         # Yeni kullanıcı ekle (varsayılan olarak USER rolü)
@@ -168,6 +168,38 @@ def register():
             VALUES (%s, %s, 'USER')
         """
         user_id = execute_insert(insert_query, (username, password_hash))
+        
+        # İzmit ID'sini dinamik olarak al
+        izmit_result = execute_query("SELECT id FROM districts WHERE name = 'İzmit' OR name = 'Izmit' LIMIT 1")
+        
+        if not izmit_result:
+            print("⚠️  İzmit ilçesi bulunamadı! İlk ilçe kullanılıyor...")
+            izmit_result = execute_query("SELECT MIN(id) as id FROM districts")
+        
+        izmit_id = izmit_result[0]['id'] if izmit_result else 1
+        
+        # Yeni kullanıcı için 3 araç oluştur (İzmit'ten başlayan)
+        print(f"🚛 Yeni kullanıcı '{username}' için araçlar oluşturuluyor (Başlangıç: İzmit ID={izmit_id})...")
+        
+        # Küçük Araç (500 kg)
+        execute_insert(
+            "INSERT INTO vehicles (vehicle_type_id, is_rented, current_location_district_id, user_id) VALUES (1, FALSE, %s, %s)",
+            (izmit_id, user_id)
+        )
+        
+        # Orta Araç (750 kg)
+        execute_insert(
+            "INSERT INTO vehicles (vehicle_type_id, is_rented, current_location_district_id, user_id) VALUES (2, FALSE, %s, %s)",
+            (izmit_id, user_id)
+        )
+        
+        # Büyük Araç (1000 kg)
+        execute_insert(
+            "INSERT INTO vehicles (vehicle_type_id, is_rented, current_location_district_id, user_id) VALUES (3, FALSE, %s, %s)",
+            (izmit_id, user_id)
+        )
+        
+        print(f"✅ Kullanıcı '{username}' için 3 araç oluşturuldu (İzmit - ID {izmit_id})")
         
         return jsonify({
             'success': True,

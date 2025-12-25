@@ -141,7 +141,7 @@
             <div class="dashboard-card">
                 <h3>⚙️ Sistem Ayarları</h3>
                 <p>Sistem parametrelerini düzenleyin, araç tiplerini ve maliyetleri ayarlayın.</p>
-                <a href="#" class="quick-link">Yakında...</a>
+                <a href="#" class="quick-link" onclick="showSystemSettings(); return false;">Ayarları Düzenle →</a>
             </div>
 
             <!-- Database -->
@@ -169,6 +169,42 @@
             <p class="info-text">
                 <strong>Kullanıcı Sayfası:</strong> Normal kullanıcılar için kargo oluşturma sayfası mevcuttur.
             </p>
+        </div>
+
+        <!-- System Settings Modal -->
+        <div id="settingsModal"
+            style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+            <div
+                style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                <h2 style="margin-bottom: 1.5rem;">⚙️ Sistem Parametreleri</h2>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>Maliyet Parametreleri</h3>
+                    <div style="margin-top: 1rem;">
+                        <label style="font-weight: 500;">Yakıt Maliyeti (TL/km):</label>
+                        <input type="number" id="costPerKm" step="0.1" min="0"
+                            style="width: 100%; padding: 0.75rem; margin-top: 0.5rem; border-radius: 8px; border: 1px solid var(--border); font-size: 1rem;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>Araç Kiralama Fiyatları</h3>
+                    <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 1rem;">Her araç tipi için farklı kiralama
+                        fiyatı belirleyebilirsiniz:</p>
+                    <div id="vehicleCostInputs" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <div
+                    style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                    <button onclick="closeSystemSettings()"
+                        style="padding: 0.75rem 1.5rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); cursor: pointer; font-size: 1rem;">İptal</button>
+                    <button onclick="saveSystemSettings()"
+                        style="padding: 0.75rem 2rem; border-radius: 8px; border: none; background: var(--primary); color: white; cursor: pointer; font-size: 1rem; font-weight: 500;">💾
+                        Kaydet</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -238,6 +274,113 @@
             }
 
             window.location.href = 'login.html';
+        }
+
+        // System Settings Functions
+        async function showSystemSettings() {
+            console.log('🔧 Loading system settings...');
+            try {
+                const response = await fetch(`${API_URL}/system-parameters`, {
+                    credentials: 'include'
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    console.log('✓ Settings loaded successfully');
+                    console.log('Vehicle types:', data.data.vehicle_types);
+
+                    // Set cost_per_km
+                    document.getElementById('costPerKm').value = data.data.cost_per_km || 1.0;
+
+                    // Create inputs for each vehicle type
+                    const vehicleTypes = data.data.vehicle_types || [];
+                    const container = document.getElementById('vehicleCostInputs');
+
+                    if (vehicleTypes.length === 0) {
+                        container.innerHTML = '<p style="color: #ff6b6b;">Araç tipi bulunamadı</p>';
+                    } else {
+                        container.innerHTML = vehicleTypes.map(v => `
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bg); border-radius: 8px;">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 500; font-size: 1rem;">${v.name}</div>
+                                    <div style="font-size: 0.85rem; opacity: 0.7;">Kapasite: ${v.capacity_kg} kg</div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="number" 
+                                           id="vehicleCost_${v.id}" 
+                                           value="${v.rental_cost || 200}" 
+                                           step="10" 
+                                           min="0"
+                                           style="width: 120px; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border); text-align: right; font-size: 1rem;">
+                                    <span style="font-weight: 500;">TL</span>
+                                </div>
+                            </div>
+                        `).join('');
+
+                        // Store vehicle IDs for save function
+                        window.vehicleTypeIds = vehicleTypes.map(v => v.id);
+                    }
+
+                    // Show modal
+                    document.getElementById('settingsModal').style.display = 'flex';
+                    console.log('✓ Modal displayed');
+                } else {
+                    console.error('API returned success=false:', data.error);
+                    alert('API Hatası: ' + (data.error || 'Bilinmeyen hata'));
+                }
+            } catch (error) {
+                console.error('Settings load error:', error);
+                console.error('Error details:', error.message, error.stack);
+                alert('Ayarlar yüklenemedi! Konsolu kontrol edin.');
+            }
+        }
+
+        function closeSystemSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        async function saveSystemSettings() {
+            const costPerKm = document.getElementById('costPerKm').value;
+
+            // Collect vehicle costs
+            const vehicleCosts = {};
+            if (window.vehicleTypeIds) {
+                window.vehicleTypeIds.forEach(id => {
+                    const input = document.getElementById(`vehicleCost_${id}`);
+                    if (input) {
+                        vehicleCosts[id] = parseFloat(input.value);
+                    }
+                });
+            }
+
+            console.log('Saving:', { cost_per_km: costPerKm, vehicle_costs: vehicleCosts });
+
+            try {
+                const response = await fetch(`${API_URL}/system-parameters`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        cost_per_km: parseFloat(costPerKm),
+                        vehicle_costs: vehicleCosts
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Parametreler güncellendi!');
+                    closeSystemSettings();
+                } else {
+                    alert('❌ Hata: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('❌ Kaydetme hatası!');
+            }
         }
 
         // Run on load

@@ -136,22 +136,25 @@ def create_scenario():
             distance_matrix = calculate_distance_matrix(districts)
             use_osm = False
         
-        # ===== ARAÇ YÜKLEME: 3 ÜCRETSIZ ARAÇ =====
+        # ===== ARAÇ YÜKLEME: KULLANICININ KENDI 3 ARAÇ =====
+        user_id = session.get('user_id')
+        
         own_vehicles_query = """
             SELECT v.id, v.vehicle_type_id, v.current_location_district_id,
                    vt.capacity_kg, vt.rental_cost, vt.name as type_name
             FROM vehicles v
             JOIN vehicle_types vt ON v.vehicle_type_id = vt.id
             WHERE v.is_rented = FALSE
+              AND v.user_id = %s
             ORDER BY v.id
             LIMIT 3
         """
-        own_vehicles = execute_query(own_vehicles_query)
+        own_vehicles = execute_query(own_vehicles_query, (user_id,))
         
         if not own_vehicles:
             return jsonify({
                 'success': False,
-                'error': 'Hiç araç bulunamadı!'
+                'error': 'Hiç araç bulunamadı! Lütfen yönetici ile iletişime geçin.'
             }), 400
         
         # Float conversion
@@ -230,10 +233,14 @@ def create_scenario():
                     """
                     vehicle_type = execute_query(vehicle_type_query)[0]
                     
-                    # Yeni araç oluştur (kiralık)
+                    # İzmit ID'sini al
+                    izmit_result = execute_query("SELECT id FROM districts WHERE name = 'İzmit' OR name = 'Izmit' LIMIT 1")
+                    izmit_id = izmit_result[0]['id'] if izmit_result else 1
+                    
+                    # Yeni araç oluştur (kiralık - KULLANICIYA ÖZEL - İzmit'ten başlar)
                     new_vehicle_id = execute_insert(
-                        "INSERT INTO vehicles (vehicle_type_id, is_rented, current_location_district_id) VALUES (%s, TRUE, 12)",
-                        (vehicle_type['id'],)
+                        "INSERT INTO vehicles (vehicle_type_id, is_rented, current_location_district_id, user_id) VALUES (%s, TRUE, %s, %s)",
+                        (vehicle_type['id'], izmit_id, user_id)
                     )
                     
                     new_vehicle = {
@@ -528,38 +535,39 @@ def get_routes(scenario_id):
             'error': str(e)
         }), 500
 
-@api.route('/system-parameters', methods=['GET'])
-def get_system_parameters():
-    """
-    Sistem parametrelerini getir
-    
-    GET /system-parameters
-    
-    Response:
-        {
-            "success": true,
-            "data": {
-                "cost_per_km": 5.0,
-                "default_vehicle_count": 3
-            }
-        }
-    """
-    try:
-        params = execute_query("SELECT * FROM system_parameters LIMIT 1")
-        
-        if not params:
-            return jsonify({
-                'success': False,
-                'error': 'Sistem parametreleri bulunamadı'
-            }), 404
-        
-        return jsonify({
-            'success': True,
-            'data': params[0]
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+# OLD ENDPOINT - MOVED TO system_params.py
+# @api.route('/system-parameters', methods=['GET'])
+# def get_system_parameters_old():
+#     """
+#     Sistem parametrelerini getir
+#     
+#     GET /system-parameters
+#     
+#     Response:
+#         {
+#             "success": true,
+#             "data": {
+#                 "cost_per_km": 5.0,
+#                 "default_vehicle_count": 3
+#             }
+#         }
+#     """
+#     try:
+#         params = execute_query("SELECT * FROM system_parameters LIMIT 1")
+#         
+#         if not params:
+#             return jsonify({
+#                 'success': False,
+#                 'error': 'Sistem parametreleri bulunamadı'
+#             }), 404
+#         
+#         return jsonify({
+#             'success': True,
+#             'data': params[0]
+#         }), 200
+#         
+#     except Exception as e:
+#         return jsonify({
+#             'success': False,
+#             'error': str(e)
+#         }), 500

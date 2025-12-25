@@ -13,6 +13,7 @@ from flask_session import Session
 from config import init_pool, close_pool
 from routes import api
 from auth import auth
+from system_params import params_bp
 import atexit
 import os
 from datetime import timedelta
@@ -37,6 +38,8 @@ CORS(app, supports_credentials=True, origins=['http://localhost:8000', 'http://1
 # Blueprint'leri kaydet
 app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(auth, url_prefix='/api/auth')
+app.register_blueprint(params_bp, url_prefix='/api')
+print("✓ System parameters API registered")
 
 
 # Ana sayfa
