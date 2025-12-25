@@ -222,7 +222,7 @@ async function createScenario() {
         return;
     }
 
-    const cargos = [];
+    const selectedCargos = [];
     let isValid = true;
 
     cargoRows.forEach(row => {
@@ -235,10 +235,17 @@ async function createScenario() {
             return;
         }
 
-        cargos.push({
-            district_id: parseInt(districtId),
-            weight_kg: parseFloat(weight),
-            quantity: parseInt(quantity)
+        const district = districts.find(d => d.id === parseInt(districtId));
+        if (!district) {
+            isValid = false;
+            showError('Geçersiz ilçe seçimi');
+            return;
+        }
+
+        selectedCargos.push({
+            district: district,
+            weight: parseFloat(weight),
+            count: parseInt(quantity)
         });
     });
 
@@ -248,6 +255,25 @@ async function createScenario() {
     }
 
     const scenarioType = document.getElementById('scenarioType').value;
+
+    // Prepare cargo data
+    const cargos = selectedCargos.map(cargo => ({
+        district_id: cargo.district.id,
+        weight_kg: cargo.weight,
+        quantity: cargo.count
+    }));
+
+    // DEBUG: Hangi ilçelere kargo gönderiliyor?
+    console.log('📦 Kargolar:');
+    selectedCargos.forEach(c => {
+        console.log(`  - ID: ${c.district.id}, İlçe: ${c.district.name}, Ağırlık: ${c.weight} kg, Adet: ${c.count}`);
+    });
+
+    const scenarioData = {
+        scenario_type: scenarioType,
+        algorithm: 'hybrid',
+        cargos: cargos
+    };
 
     // Show loading state
     showLoading(true);
@@ -260,10 +286,7 @@ async function createScenario() {
                 'Content-Type': 'application/json'
             },
             credentials: 'include',
-            body: JSON.stringify({
-                scenario_type: scenarioType,
-                cargos: cargos
-            })
+            body: JSON.stringify(scenarioData)
         });
 
         const data = await response.json();
@@ -316,32 +339,85 @@ function displayRoutesOnMap(routes) {
     routes.forEach((route, index) => {
         const color = colors[index % colors.length];
 
-        // Create coordinates array from stops
-        const coordinates = route.stops.map(stop => [stop.latitude, stop.longitude]);
+        try {
+            // Parse route_geometry from backend
+            let routeGeometry;
+            if (typeof route.route_geometry === 'string') {
+                routeGeometry = JSON.parse(route.route_geometry.replace(/'/g, '"'));
+            } else {
+                routeGeometry = route.route_geometry;
+            }
 
-        // Draw polyline
-        const polyline = L.polyline(coordinates, {
-            color: color,
-            weight: 4,
-            opacity: 0.8,
-            smoothFactor: 1
-        }).addTo(map);
+            // Check if we have OSM geometry (FeatureCollection)
+            if (routeGeometry && routeGeometry.type === 'FeatureCollection' && routeGeometry.features) {
+                console.log(`✓ Rota ${index + 1}: OSM geometrisi ile çiziliyor (${routeGeometry.features.length} segment)`);
 
-        // Add popup
-        polyline.bindPopup(`
-            <div style="min-width: 200px;">
-                <strong style="font-size: 14px;">🚚 Rota ${index + 1}</strong><br>
-                <hr style="margin: 8px 0; border-color: #ddd;">
-                <strong>Araç Tipi:</strong> ${route.vehicle_type_name}<br>
-                <strong>Mesafe:</strong> ${route.distance} km<br>
-                <strong>Maliyet:</strong> ${route.cost} TL<br>
-                <hr style="margin: 8px 0; border-color: #ddd;">
-                <strong>Duraklar:</strong><br>
-                ${route.stops.map((s, i) => `${i + 1}. ${s.name}`).join('<br>')}
-            </div>
-        `);
+                // Draw each segment's real road geometry
+                routeGeometry.features.forEach((feature, segmentIndex) => {
+                    if (feature.geometry && feature.geometry.type === 'LineString') {
+                        // OSM coordinates are [lon, lat], Leaflet needs [lat, lon]
+                        const latlngs = feature.geometry.coordinates.map(coord => [coord[1], coord[0]]);
 
-        routeLayers.push(polyline);
+                        const polyline = L.polyline(latlngs, {
+                            color: color,
+                            weight: 4,
+                            opacity: 0.8,
+                            smoothFactor: 1
+                        }).addTo(map);
+
+                        // Add popup with segment info
+                        if (feature.properties) {
+                            polyline.bindPopup(`
+                                <div style="min-width: 200px;">
+                                    <strong style="font-size: 14px;">🚚 Rota ${index + 1} - Segment ${segmentIndex + 1}</strong><br>
+                                    <hr style="margin: 8px 0; border-color: #ddd;">
+                                    ${feature.properties.from ? `<strong>Başlangıç:</strong> ${feature.properties.from}<br>` : ''}
+                                    ${feature.properties.to ? `<strong>Bitiş:</strong> ${feature.properties.to}<br>` : ''}
+                                    ${feature.properties.distance_km ? `<strong>Mesafe:</strong> ${feature.properties.distance_km} km<br>` : ''}
+                                    ${feature.properties.duration_min ? `<strong>Süre:</strong> ${feature.properties.duration_min} dakika<br>` : ''}
+                                </div>
+                            `);
+                        }
+
+                        routeLayers.push(polyline);
+                    }
+                });
+            } else {
+                // Fallback: Straight line if no OSM geometry
+                console.log(`⚠️  Rota ${index + 1}: Düz çizgi ile çiziliyor (OSM yok)`);
+                const coordinates = route.stops.map(stop => [stop.latitude, stop.longitude]);
+
+                const polyline = L.polyline(coordinates, {
+                    color: color,
+                    weight: 4,
+                    opacity: 0.8,
+                    dashArray: '10, 5',  // Dashed line to indicate fallback
+                    smoothFactor: 1
+                }).addTo(map);
+
+                polyline.bindPopup(`
+                    <div style="min-width: 200px;">
+                        <strong style="font-size: 14px;">🚚 Rota ${index + 1}</strong><br>
+                        <hr style="margin: 8px 0; border-color: #ddd;">
+                        <strong>Araç Tipi:</strong> ${route.vehicle_type_name}<br>
+                        <strong>Mesafe:</strong> ${route.distance} km<br>
+                        <strong>Maliyet:</strong> ${route.cost} TL<br>
+                        <hr style="margin: 8px 0; border-color: #ddd;">
+                        <strong>Duraklar:</strong><br>
+                        ${route.stops.map((s, i) => `${i + 1}. ${s.name}`).join('<br>')}
+                    </div>
+                `);
+
+                routeLayers.push(polyline);
+            }
+
+        } catch (error) {
+            console.error(`Rota ${index + 1} çizim hatası:`, error);
+            // Fallback to simple line
+            const coordinates = route.stops.map(stop => [stop.latitude, stop.longitude]);
+            const polyline = L.polyline(coordinates, { color: color, weight: 4 }).addTo(map);
+            routeLayers.push(polyline);
+        }
 
         // Add animated markers for route
         addRouteMarkers(route.stops, color);

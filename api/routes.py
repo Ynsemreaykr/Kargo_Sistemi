@@ -3,7 +3,7 @@ Kargo İşletme Sistemi - API Routes
 Flask endpoint'leri
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from config import execute_query, execute_insert
 from utils import create_route_geometry
 from algorithms import (
@@ -82,8 +82,24 @@ def create_scenario():
     try:
         data = request.get_json()
         scenario_type = data.get('scenario_type', 'LIMITED')
-        algorithm_choice = data.get('algorithm', 'hybrid')  # greedy, sa, hybrid
+        algorithm_choice = data.get('algorithm', 'hybrid')
         cargos = data.get('cargos', [])
+        
+        # DEBUG: Gelen veriyi kontrol et
+        print("\n" + "="*60)
+        print("📨 YENİ SENARYO İSTEĞİ")
+        print("="*60)
+        print(f"Scenario Type: {scenario_type}")
+        print(f"Algorithm: {algorithm_choice}")
+        print(f"Cargos type: {type(cargos)}")
+        print(f"Cargos content: {cargos}")
+        
+        # Validation
+        if not isinstance(cargos, list):
+            return jsonify({
+                'success': False,
+                'error': f'cargos bir liste olmalı, gelen tip: {type(cargos)}'
+            }), 400
         
         if not cargos:
             return jsonify({
@@ -98,64 +114,168 @@ def create_scenario():
         # İlçeleri al
         districts = execute_query("SELECT id, name, latitude, longitude FROM districts")
         
-        # Mesafe matrisini hesapla (OSM ile - cache kullanarak)
-        use_osm = data.get('use_osm', True)  # Default: OSM kullan
+        # İlçe koordinatlarını float'a çevir
+        for district in districts:
+            district['latitude'] = float(district['latitude'])
+            district['longitude'] = float(district['longitude'])
+        
+        # Mesafe matrisini hesapla - OSM ile gerçek yollar
+        use_osm = True
         
         try:
-            if use_osm:
-                print("🗺️ OSM ile gerçek yol mesafeleri kullanılıyor...")
-                distance_matrix = calculate_distance_matrix_osm(
-                    districts, 
-                    use_cache=True,
-                    use_osm=True
-                )
-            else:
-                print("📐 Haversine (kuş uçuşu) mesafeler kullanılıyor...")
-                distance_matrix = calculate_distance_matrix(districts)
+            print("🗺️ OSM API ile gerçek yol mesafeleri hesaplanıyor...")
+            distance_matrix = calculate_distance_matrix_osm(
+                districts, 
+                use_cache=True,
+                use_osm=True
+            )
+            print("✓ OSM mesafe matrisi hazır!")
         except Exception as e:
-            print(f"⚠️ OSM hatası, Haversine fallback: {e}")
+            print(f"⚠️ OSM hatası: {e}")
+            print("📐 Haversine fallback kullanılıyor...")
             distance_matrix = calculate_distance_matrix(districts)
-            use_osm = False  # Fallback olduğunu işaretle
+            use_osm = False
         
-        # Araçları ve araç tiplerini al
-        vehicles_query = """
-            SELECT v.id, v.vehicle_type_id, vt.capacity_kg, vt.rental_cost, vt.cost_per_km, vt.name as type_name
+        # ===== ARAÇ YÜKLEME: 3 ÜCRETSIZ ARAÇ =====
+        own_vehicles_query = """
+            SELECT v.id, v.vehicle_type_id, v.current_location_district_id,
+                   vt.capacity_kg, vt.rental_cost, vt.name as type_name
             FROM vehicles v
             JOIN vehicle_types vt ON v.vehicle_type_id = vt.id
             WHERE v.is_rented = FALSE
-            LIMIT %s
+            ORDER BY v.id
+            LIMIT 3
         """
-        vehicles = execute_query(vehicles_query, (params['default_vehicle_count'],))
+        own_vehicles = execute_query(own_vehicles_query)
         
-        if not vehicles:
+        if not own_vehicles:
             return jsonify({
                 'success': False,
-                'error': 'Kullanılabilir araç bulunamadı'
+                'error': 'Hiç araç bulunamadı!'
             }), 400
+        
+        # Float conversion
+        for vehicle in own_vehicles:
+            vehicle['capacity_kg'] = float(vehicle['capacity_kg'])
+            vehicle['rental_cost'] = float(vehicle['rental_cost']) if vehicle['rental_cost'] else 0.0
+            vehicle['cost_per_km'] = cost_per_km
+        
+        print(f"\n🚛 Kendi araçlar: {len(own_vehicles)} adet (ücretsiz)")
+        for v in own_vehicles:
+            print(f"   - Araç {v['id']}: {v['type_name']} ({v['capacity_kg']:.0f} kg)")
         
         # Kargoları veritabanına kaydet
         cargo_ids = []
         for cargo in cargos:
             cargo_id = execute_insert(
                 "INSERT INTO cargo (district_id, weight_kg, quantity) VALUES (%s, %s, %s)",
-                (cargo['district_id'], cargo['weight_kg'], cargo['quantity'])
+                (cargo['district_id'], cargo['weight_kg'], cargo.get('quantity', 1))
             )
             cargo_ids.append(cargo_id)
         
         # ===== AŞAMA 3: GERÇEK ALGORİTMA =====
-        # 1. Greedy (Nearest Neighbor) ile başlangıç rotaları oluştur
-        print(f"🔧 Algoritma: {algorithm_choice}")
+        print(f"\n🔧 Algoritma: {algorithm_choice}")
         print(f"📦 Kargo sayısı: {len(cargos)}")
-        print(f"🚛 Araç sayısı: {len(vehicles)}")
+        print(f"📊 Senaryo tipi: {scenario_type}")
         
+        # 1. Greedy ile başlangıç rotaları (kendi araçlarla)
         initial_routes = nearest_neighbor_algorithm(
             cargos, 
             districts, 
-            vehicles,
-            start_district_id=12  # İzmit
+            own_vehicles
         )
         
-        print(f"✓ Greedy rotalar oluşturuldu: {len(initial_routes)} rota")
+        print(f"\n✓ Kendi araçlarla {len(initial_routes)} rota oluşturuldu")
+        
+        # 2. Teslim edilen vs edilmeyen kargolar
+        delivered_districts = set()
+        for route in initial_routes:
+            # route['route'] = [12, 6, 3, ...]  (başlangıç + duraklar)
+            delivered_districts.update(route['route'][1:])  # İlk eleman başlangıç, skip
+        
+        cargo_districts = set(c['district_id'] for c in cargos)
+        undelivered_districts = cargo_districts - delivered_districts
+        
+        # 3. LIMITED vs UNLIMITED kontrolü
+        routes = initial_routes
+        rental_count = 0
+        total_rental_cost = 0.0
+        
+        if undelivered_districts:
+            if scenario_type == 'LIMITED':
+                # HATA VER
+                undelivered_names = []
+                for dist_id in undelivered_districts:
+                    district = next((d for d in districts if d['id'] == dist_id), None)
+                    if district:
+                        undelivered_names.append(district['name'])
+                
+                return jsonify({
+                    'success': False,
+                    'error': f"Araç yetersiz! {len(undelivered_districts)} ilçeye ulaşılamadı: {', '.join(undelivered_names)}"
+                }), 400
+            
+            else:  # UNLIMITED - ARAÇ KİRALA
+                print(f"\n💰 UNLIMITED MOD: {len(undelivered_districts)} ilçe için araç kiralanacak")
+                
+                while undelivered_districts:
+                    rental_count += 1
+                    
+                    # En büyük kapasiteli aracı bul
+                    vehicle_type_query = """
+                        SELECT id, capacity_kg, rental_cost, name
+                        FROM vehicle_types
+                        ORDER BY capacity_kg DESC
+                        LIMIT 1
+                    """
+                    vehicle_type = execute_query(vehicle_type_query)[0]
+                    
+                    # Yeni araç oluştur (kiralık)
+                    new_vehicle_id = execute_insert(
+                        "INSERT INTO vehicles (vehicle_type_id, is_rented, current_location_district_id) VALUES (%s, TRUE, 12)",
+                        (vehicle_type['id'],)
+                    )
+                    
+                    new_vehicle = {
+                        'id': new_vehicle_id,
+                        'vehicle_type_id': vehicle_type['id'],
+                        'capacity_kg': float(vehicle_type['capacity_kg']),
+                        'rental_cost': float(vehicle_type['rental_cost']),
+                        'type_name': vehicle_type['name'],
+                        'current_location_district_id': 12,
+                        'cost_per_km': cost_per_km
+                    }
+                    
+                    total_rental_cost += new_vehicle['rental_cost']
+                    
+                    print(f"   🚛 Araç #{rental_count} kiralandı: {new_vehicle['type_name']} (Kiralama: {new_vehicle['rental_cost']:.2f} TL)")
+                    
+                    # Kalan kargolar
+                    remaining_cargos = [c for c in cargos if c['district_id'] in undelivered_districts]
+                    
+                    # Rota oluştur
+                    extra_routes = nearest_neighbor_algorithm(
+                        remaining_cargos,
+                        districts,
+                        [new_vehicle]
+                    )
+                    
+                    routes.extend(extra_routes)
+                    
+                    # Güncelle
+                    for route in extra_routes:
+                        delivered_districts.update(route['route'][1:])
+                    
+                    undelivered_districts = cargo_districts - delivered_districts
+                    
+                    # Sonsuz döngü önleme
+                    if rental_count > 20:
+                        print("⚠️  Maksimum kiralama limitine ulaşıldı!")
+                        break
+                
+                print(f"\n✓ Toplam {rental_count} araç kiralandı (Maliyet: {total_rental_cost:.2f} TL)")
+        
+        print(f"\n✅ TOPLAM {len(routes)} ROTA OLUŞTURULDU")
         
         # 2. Simulated Annealing ile optimize et (eğer seçilmişse)
         if algorithm_choice in ['sa', 'hybrid']:
@@ -181,21 +301,37 @@ def create_scenario():
             routes = initial_routes
         
         # 3. Maliyet hesaplama
+        total_cost = total_rental_cost  # Başlangıç: Kiralama maliyeti
+        total_distance = 0.0
+        
         for route in routes:
             # Araç bilgisini al
-            vehicle = next((v for v in vehicles if v['id'] == route['vehicle_id']), None)
-            if vehicle:
-                route['cost'] = calculate_route_cost(
-                    route['total_distance_km'],
-                    vehicle
-                )
+            vehicle = next((v for v in own_vehicles if v['id'] == route['vehicle_id']), None)
+            
+            if not vehicle:
+                # Kiralık araç - rental_cost_per_km kullan
+                vehicle_type = execute_query(
+                    "SELECT rental_cost FROM vehicle_types WHERE id = (SELECT vehicle_type_id FROM vehicles WHERE id = %s)",
+                    (route['vehicle_id'],)
+                )[0]
+                rental_cost_value = float(vehicle_type['rental_cost']) if vehicle_type['rental_cost'] else 0.0
+                
+                # Kiralık araç için maliyet = mesafe * cost_per_km (ana kiralama maliyeti zaten eklendi)
+                route_cost = route['total_distance_km'] * cost_per_km
+            else:
+                # Kendi aracımız - sadece yakıt maliyeti
+                route_cost = route['total_distance_km'] * cost_per_km
+            
+            route['cost'] = round(route_cost, 2)
+            total_cost += route_cost
+            total_distance += route['total_distance_km']
+            
+            print(f"  Rota {route['vehicle_id']}: Mesafe={route['total_distance_km']:.2f} km, Maliyet={route_cost:.2f} TL")
         
-        # Toplam maliyet ve mesafe
-        total_cost = sum(r['cost'] for r in routes)
-        total_distance = sum(r['total_distance_km'] for r in routes)
-        
-        print(f"💰 Toplam Maliyet: {total_cost} TL")
-        print(f"📏 Toplam Mesafe: {total_distance} km")
+        print(f"\n💰 Toplam Maliyet: {total_cost:.2f} TL")
+        print(f"   - Kiralama Maliyeti: {total_rental_cost:.2f} TL")
+        print(f"   - Yakıt Maliyeti: {total_cost - total_rental_cost:.2f} TL")
+        print(f"📏 Toplam Mesafe: {total_distance:.2f} km")
         
         # Senaryoyu kaydet
         scenario_id = execute_insert(
@@ -229,6 +365,19 @@ def create_scenario():
                     (route_id, district_id, order),
                     return_id=False
                 )
+            
+            # ARAÇ KONUMUNU GÜNCELLE! (En son gittiği yer)
+            new_location_id = route.get('end_location_id')
+            if new_location_id:
+                try:
+                    execute_insert(
+                        "UPDATE vehicles SET current_location_district_id = %s WHERE id = %s",
+                        (new_location_id, route['vehicle_id']),
+                        return_id=False
+                    )
+                    print(f"✓ Araç {route['vehicle_id']} konumu güncellendi: İlçe {new_location_id}")
+                except Exception as e:
+                    print(f"⚠️  Araç konum güncelleme hatası: {e}")
         
         return jsonify({
             'success': True,
