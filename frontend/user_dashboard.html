@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kargolarım - Kargo Sistemi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .user-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .cargo-form-card {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        padding: 2rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        margin-bottom: 2rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+        }
+
+        .cargo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .cargo-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.2s;
+            border-left: 4px solid var(--primary);
+        }
+
+        .cargo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .cargo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .cargo-id {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-in_transit {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .status-delivered {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .cargo-details {
+            margin: 1rem 0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .detail-label {
+            opacity: 0.7;
+        }
+
+        .detail-value {
+            font-weight: 500;
+        }
+
+        .cargo-footer {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            opacity: 0.6;
+        }
+
+        .btn-view {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-view:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">📦 Kargo Sistemi</h1>
+            <div class="user-info" id="userInfo" style="display: none;">
+                <span class="user-name" id="userName"></span>
+                <button class="logout-btn" id="logoutBtn" type="button">
+                    <span class="logout-icon">🚪</span>
+                    <span class="logout-text">Çıkış</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="user-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>📦 Kargolarım</h1>
+            <p>Yük gönderin, kargolarınızı takip edin</p>
+        </div>
+
+        <!-- Cargo Form -->
+        <div class="cargo-form-card">
+            <h2 style="margin-bottom: 1.5rem;">📤 Yeni Yük Gönder</h2>
+            <form id="cargoForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="destination">Hedef Şube *</label>
+                        <select id="destination" class="form-control" required>
+                            <option value="">Seçiniz...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">Ağırlık (kg) *</label>
+                        <input type="number" id="weight" class="form-control" min="1" max="1000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Adet *</label>
+                        <input type="number" id="quantity" class="form-control" min="1" value="1" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">
+                    🚀 Gönder
+                </button>
+            </form>
+        </div>
+
+        <!-- Cargo List -->
+        <div>
+            <h2 style="margin-bottom: 1.5rem;">📋 Kargolarım</h2>
+            <div id="cargoList" class="cargo-grid">
+                <!-- Dynamic content -->
+            </div>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <p>Henüz kargo göndermediniz.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5002/api';
+
+        // Load districts
+        async function loadDistricts() {
+            try {
+                const response = await fetch(`${API_URL}/districts`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                const select = document.getElementById('destination');
+                data.data.forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district.id;
+                    option.textContent = district.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('District load error:', error);
+            }
+        }
+
+        // Submit cargo
+        document.getElementById('cargoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const destination = document.getElementById('destination').value;
+            const weight = document.getElementById('weight').value;
+            const quantity = document.getElementById('quantity').value;
+
+            if (!destination || !weight || !quantity) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/user/cargos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        destination_district_id: parseInt(destination),
+                        weight_kg: parseFloat(weight),
+                        quantity: parseInt(quantity)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    document.getElementById('cargoForm').reset();
+                    loadCargos();
+                } else {
+                    alert('❌ Hata: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Cargo submit error:', error);
+                alert('❌ Kargo gönderme hatası!');
+            }
+        });
+
+        // Load cargos
+        async function loadCargos() {
+            try {
+                const response = await fetch(`${API_URL}/user/cargos/my`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                const container = document.getElementById('cargoList');
+                const emptyState = document.getElementById('emptyState');
+
+                if (data.success && data.cargos.length > 0) {
+                    container.innerHTML = data.cargos.map(cargo => {
+                        const statusClass = `status-${cargo.status}`;
+                        const statusText = {
+                            'pending': '🟡 Onay Bekleniyor',
+                            'in_transit': '🔵 Dağıtımda',
+                            'delivered': '🟢 Teslim Edildi',
+                            'cancelled': '⚫ İptal Edildi'
+                        }[cargo.status] || cargo.status;
+
+                        return `
+                            <div class="cargo-card">
+                                <div class="cargo-header">
+                                    <div class="cargo-id">#${cargo.id}</div>
+                                    <div class="status-badge ${statusClass}">${statusText}</div>
+                                </div>
+                                <div class="cargo-details">
+                                    <div class="detail-row">
+                                        <span class="detail-label">📍 Hedef:</span>
+                                        <span class="detail-value">${cargo.destination}</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">⚖️ Ağırlık:</span>
+                                        <span class="detail-value">${cargo.weight_kg} kg</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">📦 Adet:</span>
+                                        <span class="detail-value">${cargo.quantity}</span>
+                                    </div>
+                                </div>
+                                <div class="cargo-footer">
+                                    📅 ${cargo.created_at}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    emptyState.style.display = 'none';
+                } else {
+                    container.innerHTML = '';
+                    emptyState.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Cargo load error:', error);
+            }
+        }
+
+        // Auth check
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_URL}/auth/status`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (!data.authenticated || !data.user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Check if admin (should go to admin panel)
+                if (data.user.role === 'admin') {
+                    window.location.href = 'admin.html';
+                    return;
+                }
+
+                // Show user info
+                document.getElementById('userName').textContent = data.user.username;
+                document.getElementById('userInfo').style.display = 'flex';
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = 'login.html';
+        });
+
+        // Initialize
+        checkAuth();
+        loadDistricts();
+        loadCargos();
+    </script>
+</body>
+
+</html>

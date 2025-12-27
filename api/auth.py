@@ -98,6 +98,7 @@ def login():
         
         return jsonify({
             'success': True,
+            'role': user['role'].lower(),  # Frontend expects lowercase
             'data': {
                 'user_id': user['id'],
                 'username': user['username'],
@@ -252,19 +253,18 @@ def get_current_user():
 # ===========================
 @auth.route('/status', methods=['GET'])
 def check_auth_status():
-    """Kullanıcının giriş durumunu kontrol et"""
+    """Kullanıcının giriş durumunu kontrol et - Frontend için"""
     if 'user_id' in session:
         return jsonify({
-            'success': True,
             'authenticated': True,
-            'data': {
-                'user_id': session.get('user_id'),
+            'user': {
+                'id': session.get('user_id'),
                 'username': session.get('username'),
-                'role': session.get('role')
+                'role': session.get('role', '').lower()  # Frontend expects lowercase 'admin' or 'user'
             }
         })
     else:
         return jsonify({
-            'success': True,
-            'authenticated': False
+            'authenticated': False,
+            'user': None
         })

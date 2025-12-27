@@ -4,361 +4,1321 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Kargo İşletme Sistemi</title>
-
-    <!-- Google Fonts -->
+    <title>Admin Panel - Kargo Sistemi v2.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Main CSS -->
     <link rel="stylesheet" href="styles.css">
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-primary: #0ea5e9;
+            --accent-secondary: #06b6d4;
+            --accent-hover: #0284c7;
+            --border-color: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-name {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            color: white;
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
         .admin-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
 
-        .welcome-card {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            padding: 2rem;
+        .section {
+            background: var(--bg-secondary);
             border-radius: var(--radius-lg);
+            padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
         }
 
-        .welcome-card h2 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+        .section h2 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
         }
 
-        .welcome-card p {
-            opacity: 0.9;
-            font-size: 1rem;
-        }
-
-        .dashboard-grid {
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
-        .dashboard-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.2);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .card {
+            background: var(--bg-tertiary);
             border-radius: var(--radius-lg);
             padding: 1.5rem;
-            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
         }
 
-        .dashboard-card:hover {
+        .card:hover {
             transform: translateY(-4px);
-            box-shadow: var(--shadow-glow);
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.2);
         }
 
-        .dashboard-card h3 {
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
+        .card h3 {
             color: var(--text-primary);
+            margin-bottom: 0.5rem;
         }
 
-        .dashboard-card p {
-            color: var(--text-secondary);
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
-        .quick-link {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            background: var(--primary);
-            color: white;
-            text-decoration: none;
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: all 0.3s;
         }
 
-        .quick-link:hover {
-            background: var(--primary-dark);
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        }
+
+        .btn-primary:hover {
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        #map {
+            height: 600px;
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--border-color);
+        }
+
+        .route-legend {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-top: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .route-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .route-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .route-number-tooltip {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-weight: bold;
+            font-size: 11px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            max-width: 700px;
+            width: 90%;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            padding: 2rem;
+            color: white;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .modal-header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .input-group {
+            background: var(--bg-primary);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--accent-primary);
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .admin-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .user-group {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: var(--radius-lg);
+            border-left: 4px solid var(--primary);
+        }
+
+        .cargo-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .cargo-table th,
+        .cargo-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cargo-table th {
+            background: var(--bg);
+            font-weight: 600;
+        }
+
+        .cargo-table tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .section {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn-approve {
+            background: #10b981;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+        }
+
+        .btn-approve:hover {
+            opacity: 0.9;
+        }
+
+        /* MAP STYLES */
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: var(--radius-md);
+            margin-top: 1rem;
+        }
+
+        .route-legend {
+            background: white;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-top: 1rem;
+        }
+
+        .route-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .route-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .route-number-tooltip {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-weight: bold;
+            font-size: 11px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         }
     </style>
 </head>
 
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <h1>👑 Admin Panel</h1>
-            <p>Kargo İşletme Sistemi - Yönetim Paneli</p>
-        </div>
-        <div class="header-right">
-            <div class="user-info" id="userInfo" style="display: none;">
-                <span class="user-name" id="userName"></span>
-                <span class="user-role" id="userRole"></span>
+    <header class="header"
+        style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3);">
+        <div class="header-content" style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
+            <h1 class="logo" style="font-size: 1.5rem; font-weight: 700;">📦 Admin Panel</h1>
+            <div class="user-info" style="display: flex; align-items: center; gap: 1rem;">
+                <span class="user-name" id="adminName"
+                    style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500;"></span>
+                <button onclick="showSettings()"
+                    style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                    <span>⚙️</span>
+                    <span>Ayarlar</span>
+                </button>
+                <button id="logoutBtn"
+                    style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                    <span>🚪</span>
+                    <span>Çıkış</span>
+                </button>
             </div>
-            <button class="logout-btn" id="logoutBtn" type="button">
-                <span class="logout-icon">🚪</span>
-                <span class="logout-text">Çıkış</span>
-            </button>
         </div>
     </header>
 
     <div class="admin-container">
-        <!-- Welcome Card -->
-        <div class="welcome-card">
-            <h2>Hoş Geldiniz, <span id="adminName">Admin</span>!</h2>
-            <p>Kargo İşletme Sistemi yönetim paneline hoş geldiniz.</p>
-        </div>
 
-        <!-- Dashboard Grid -->
-        <div class="dashboard-grid">
-            <!-- Cargo Management -->
-            <div class="dashboard-card">
-                <h3>🚚 Kargo Yönetimi</h3>
-                <p>Tüm kargoları görüntüleyin ve yönetin. Yeni kargolar ekleyin, mevcut kargoları düzenleyin.</p>
-                <a href="index.html" class="quick-link">Kargo Sistemine Git →</a>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">Bekleyen Kargo</div>
+                <div class="stat-value" id="totalCargos">0</div>
             </div>
-
-            <!-- User Management -->
-            <div class="dashboard-card">
-                <h3>👥 Kullanıcı Yönetimi</h3>
-                <p>Sistem kullanıcılarını görüntüleyin, yeni kullanıcılar ekleyin ve yetkileri düzenleyin.</p>
-                <a href="#" class="quick-link">Yakında...</a>
+            <div class="stat-card">
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">Toplam Ağırlık</div>
+                <div class="stat-value" id="totalWeight">0 kg</div>
             </div>
-
-            <!-- Reports -->
-            <div class="dashboard-card">
-                <h3>📊 Raporlar</h3>
-                <p>Detaylı raporlar oluşturun, istatistikleri görüntüleyin ve analiz yapın.</p>
-                <a href="#" class="quick-link">Yakında...</a>
+            <div class="stat-card">
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">Seçili Kargo</div>
+                <div class="stat-value" id="selectedCount">0</div>
             </div>
-
-            <!-- System Settings -->
-            <div class="dashboard-card">
-                <h3>⚙️ Sistem Ayarları</h3>
-                <p>Sistem parametrelerini düzenleyin, araç tiplerini ve maliyetleri ayarlayın.</p>
-                <a href="#" class="quick-link" onclick="showSystemSettings(); return false;">Ayarları Düzenle →</a>
-            </div>
-
-            <!-- Database -->
-            <div class="dashboard-card">
-                <h3>🗄️ Veritabanı</h3>
-                <p>Veritabanı yedeklemesi alın, veri tutarlılığını kontrol edin.</p>
-                <a href="#" class="quick-link">Yakında...</a>
-            </div>
-
-            <!-- Logs -->
-            <div class="dashboard-card">
-                <h3>📝 Sistem Logları</h3>
-                <p>Sistem loglarını görüntüleyin, hata kayıtlarını inceleyin.</p>
-                <a href="#" class="quick-link">Yakında...</a>
+            <div class="stat-card">
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">Aktif Kullanıcı</div>
+                <div class="stat-value" id="activeUsers">0</div>
             </div>
         </div>
 
-        <!-- Info Section -->
-        <div class="panel-section info-section">
-            <h3>ℹ️ Bilgi</h3>
-            <p class="info-text">
-                <strong>AŞAMA 2:</strong> Bu admin paneli temel özellikleri içermektedir.
-                Gelecek aşamalarda kullanıcı yönetimi, raporlama ve analiz özellikleri eklenecektir.
-            </p>
-            <p class="info-text">
-                <strong>Kullanıcı Sayfası:</strong> Normal kullanıcılar için kargo oluşturma sayfası mevcuttur.
-            </p>
+        <!-- Cargo Management Section -->
+        <div class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>📋 Bekleyen Kargolar (Kullanıcı Bazlı)</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <select id="userFilter" class="form-control" style="width: 200px;" onchange="filterByUser()">
+                        <option value="">Tüm Kullanıcılar</option>
+                    </select>
+                    <button onclick="refresh()" class="btn btn-secondary">🔄 Yenile</button>
+                </div>
+            </div>
+
+            <div id="cargoGroups">
+                <!-- Dynamic content -->
+            </div>
+
+            <div id="emptyState" style="text-align: center; padding: 3rem; display: none;">
+                <p style="font-size: 1.2rem; opacity: 0.6;">Bekleyen kargo yok 📭</p>
+            </div>
         </div>
 
         <!-- System Settings Modal -->
         <div id="settingsModal"
-            style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; overflow-y: auto;">
             <div
-                style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;">
-                <h2 style="margin-bottom: 1.5rem;">⚙️ Sistem Parametreleri</h2>
-
-                <div style="margin-bottom: 1.5rem;">
-                    <h3>Maliyet Parametreleri</h3>
-                    <div style="margin-top: 1rem;">
-                        <label style="font-weight: 500;">Yakıt Maliyeti (TL/km):</label>
-                        <input type="number" id="costPerKm" step="0.1" min="0"
-                            style="width: 100%; padding: 0.75rem; margin-top: 0.5rem; border-radius: 8px; border: 1px solid var(--border); font-size: 1rem;">
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 1.5rem;">
-                    <h3>Araç Kiralama Fiyatları</h3>
-                    <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 1rem;">Her araç tipi için farklı kiralama
-                        fiyatı belirleyebilirsiniz:</p>
-                    <div id="vehicleCostInputs" style="display: flex; flex-direction: column; gap: 1rem;">
-                        <!-- Dynamic content -->
-                    </div>
-                </div>
-
+                style="background: white; max-width: 700px; margin: 50px auto; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;">
+                <!-- Modal Header -->
                 <div
-                    style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-                    <button onclick="closeSystemSettings()"
-                        style="padding: 0.75rem 1.5rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); cursor: pointer; font-size: 1rem;">İptal</button>
-                    <button onclick="saveSystemSettings()"
-                        style="padding: 0.75rem 2rem; border-radius: 8px; border: none; background: var(--primary); color: white; cursor: pointer; font-size: 1rem; font-weight: 500;">💾
-                        Kaydet</button>
+                    style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); padding: 2rem; color: white;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 style="color: white; margin: 0;">⚙️ Sistem Ayarları</h2>
+                            <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0; font-size: 0.95rem;">Maliyet
+                                parametrelerini düzenleyin</p>
+                        </div>
+                        <button onclick="closeSettings()"
+                            style="background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 24px; transition: all 0.3s;"
+                            onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                            onmouseout="this.style.background='rgba(255,255,255,0.2)'">×</button>
+                    </div>
+                </div>
+
+                <div class="modal-body" style="padding: 2rem; background: var(--bg-secondary);">
+                    <div class="input-group"
+                        style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border-left: 4px solid var(--accent-primary);">
+                        <label
+                            style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.75rem; display: block;">🚗
+                            Km Başı Yakıt Maliyeti</label>
+                        <div style="position: relative;">
+                            <input type="number" id="costPerKm" step="0.1" class="form-control" placeholder="1.5"
+                                style="padding-left: 3rem; font-size: 1.1rem; font-weight: 600; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                            <span
+                                style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--accent-primary); font-weight: 600;">₺</span>
+                        </div>
+                        <small style="color: var(--text-muted); margin-top: 0.5rem; display: block;">Her kilometre için
+                            yakıt maliyeti</small>
+                    </div>
+
+                    <h3 style="margin: 2rem 0 1rem 0; font-size: 1.2rem; color: var(--text-primary); font-weight: 600;">
+                        🚚 Araç Kiralama Ücretleri</h3>
+                    <div id="vehicleCosts" style="display: grid; gap: 1rem;"></div>
+
+                    <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                        <button onclick="saveSettings()" class="btn btn-primary" style="flex: 1;">💾 Kaydet</button>
+                        <button onclick="closeSettings()" class="btn btn-secondary" style="flex: 1;">İptal</button>
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Distribution Controls -->
+        <div class="section">
+            <h2 style="margin-bottom: 1.5rem;">🚀 Dağıtım Oluştur</h2>
+
+            <!-- Vehicle Starting & Ending Locations -->
+            <div
+                style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border-left: 4px solid var(--accent-primary);">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: var(--text-primary);">🚗 Tüm Araçlar İçin
+                    Konum Ayarları</h3>
+                <p style="margin: 0 0 1.5rem 0; color: var(--text-muted); font-size: 0.9rem;">
+                    Tüm araçlar için başlangıç ve bitiş konumları. Seçilmezse araçlar en son kaldıkları yerden başlar ve
+                    orada kalır.
+                </p>
+
+                <div
+                    style="background: var(--bg-primary); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-color);">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <label
+                                style="display: block; margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 500;">📍
+                                Başlangıç Konumu</label>
+                            <select id="vehicleStartLocation" class="form-control"
+                                onchange="console.log('🔄 Dropdown changed! New value:', this.value, 'Text:', this.options[this.selectedIndex].text)"
+                                style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                            </select>
+                            <small style="display: block; margin-top: 0.5rem; color: var(--text-muted);">Tüm araçlar
+                                buradan başlar</small>
+                        </div>
+                        <div>
+                            <label
+                                style="display: block; margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 500;">🏁
+                                Bitiş Konumu</label>
+                            <select id="vehicleEndLocation" class="form-control"
+                                style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                            </select>
+                            <small style="display: block; margin-top: 0.5rem; color: var(--text-muted);">Tüm araçlar
+                                burada biter</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Mod Seçimi</label>
+                    <select id="modeSelect" class="form-control">
+                        <option value="LIMITED">LIMITED (3 Araç)</option>
+                        <option value="UNLIMITED">UNLIMITED (3 + Kiralama)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Algoritma</label>
+                    <select id="algorithmSelect" class="form-control">
+                        <option value="hybrid">Hybrid (Önerilen)</option>
+                        <option value="greedy">Greedy</option>
+                        <option value="simulated_annealing">Simulated Annealing</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button onclick="createDistribution()" class="btn btn-primary" style="width: 100%;">
+                        🚀 Dağıtımı Başlat
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAP SECTION (always visible) -->
+        <div id="mapSection" class="section">
+            <h2 style="margin-bottom: 1rem;">🗺️ Rota Haritası</h2>
+            <div id="map"></div>
+            <div id="routeLegend" class="route-legend" style="display: none;"></div>
         </div>
     </div>
 
     <script>
         const API_URL = 'http://localhost:5002/api';
-        let currentUser = null;
+        let selectedCargos = new Set();
+        let allCargos = [];
+        let map = null;
+        let routeLayers = [];
+        let districts = [];
+        let districtMarkers = [];
 
-        // Check authentication on load
-        async function checkAuthentication() {
+        async function loadPendingCargos() {
             try {
-                const response = await fetch(`${API_URL}/auth/status`, {
+                const response = await fetch(`${API_URL}/admin/cargos/pending`, {
                     credentials: 'include'
                 });
                 const data = await response.json();
 
-                if (!data.authenticated) {
-                    window.location.href = 'login.html';
-                    return;
+                if (data.success) {
+                    allCargos = data.cargos;
+                    displayUserGroups(allCargos);
+                    updateStats();
+                    populateUserFilter(allCargos);
                 }
-
-                currentUser = data.data;
-
-                // Check if user is admin
-                if (currentUser.role !== 'ADMIN') {
-                    // Not admin, redirect to user page
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                displayUserInfo(currentUser);
-
             } catch (error) {
-                console.error('Auth check error:', error);
-                window.location.href = 'login.html';
+                console.error('Load error:', error);
             }
         }
 
-        function displayUserInfo(user) {
-            document.getElementById('userName').textContent = user.username;
-            document.getElementById('userRole').textContent = '👑 Admin';
-            document.getElementById('adminName').textContent = user.username;
-            document.getElementById('userInfo').style.display = 'flex';
+        function displayUserGroups(cargos) {
+            const container = document.getElementById('cargoGroups');
+            const emptyState = document.getElementById('emptyState');
 
-            // Setup logout button
-            setupLogoutButton();
-        }
-
-        function setupLogoutButton() {
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', handleLogout);
-                console.log('✓ Admin logout button event listener attached');
+            if (cargos.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
             }
+
+            emptyState.style.display = 'none';
+
+            // Group by user
+            const grouped = {};
+            cargos.forEach(cargo => {
+                if (!grouped[cargo.user_id]) {
+                    grouped[cargo.user_id] = {
+                        user_id: cargo.user_id,
+                        username: cargo.username,
+                        cargos: []
+                    };
+                }
+                grouped[cargo.user_id].cargos.push(cargo);
+            });
+
+            // Display
+            container.innerHTML = Object.values(grouped).map(group => `
+                <div class="user-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin: 0;">👤 ${group.username} <span style="opacity: 0.6; font-size: 0.9rem;">(${group.cargos.length} kargo)</span></h3>
+                        <button onclick="approveAllUser(${group.user_id})" class="btn-approve">
+                            ✅ Tümünü Seç (${group.cargos.length})
+                        </button>
+                    </div>
+                    <table class="cargo-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" onchange="toggleUserCargos(${group.user_id}, this.checked)"></th>
+                                <th>ID</th>
+                                <th>Hedef</th>
+                                <th>Ağırlık</th>
+                                <th>Adet</th>
+                                <th>Tarih</th>
+                                <th>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${group.cargos.map(cargo => `
+                                <tr>
+                                    <td><input type="checkbox" value="${cargo.id}" ${selectedCargos.has(cargo.id) ? 'checked' : ''} onchange="toggleCargo(${cargo.id})"></td>
+                                    <td>#${cargo.id}</td>
+                                    <td>${cargo.destination}</td>
+                                    <td>${cargo.weight_kg} kg</td>
+                                    <td>${cargo.quantity}</td>
+                                    <td>${cargo.created_at}</td>
+                                    <td><button onclick="approveSingle(${cargo.id})" class="btn btn-small" style="background: #10b981; color: white; padding: 0.25rem 0.75rem;">✓</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `).join('');
         }
 
-        async function handleLogout() {
-            console.log('Admin logout clicked!');
+        function populateUserFilter(cargos) {
+            const filter = document.getElementById('userFilter');
+            const users = [...new Set(cargos.map(c => JSON.stringify({ id: c.user_id, name: c.username })))].map(JSON.parse);
+            filter.innerHTML = '<option value="">Tüm Kullanıcılar</option>' +
+                users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+        }
+
+        function filterByUser() {
+            const userId = document.getElementById('userFilter').value;
+            const filtered = userId ? allCargos.filter(c => c.user_id == userId) : allCargos;
+            displayUserGroups(filtered);
+        }
+
+        function toggleCargo(id) {
+            selectedCargos.has(id) ? selectedCargos.delete(id) : selectedCargos.add(id);
+            updateStats();
+        }
+
+        function toggleUserCargos(userId, checked) {
+            allCargos.filter(c => c.user_id === userId).forEach(cargo => {
+                checked ? selectedCargos.add(cargo.id) : selectedCargos.delete(cargo.id);
+            });
+            displayUserGroups(allCargos);
+            updateStats();
+        }
+
+        function approveAllUser(userId) {
+            const userCargos = allCargos.filter(c => c.user_id === userId);
+            userCargos.forEach(c => selectedCargos.add(c.id));
+            displayUserGroups(allCargos);
+            updateStats();
+            alert(`✅ ${userCargos.length} kargo seçildi!`);
+        }
+
+        function approveSingle(id) {
+            selectedCargos.add(id);
+            displayUserGroups(allCargos);
+            updateStats();
+        }
+
+        function updateStats() {
+            const totalWeight = allCargos.reduce((sum, c) => sum + parseFloat(c.weight_kg), 0);
+            const users = new Set(allCargos.map(c => c.user_id));
+
+            document.getElementById('totalCargos').textContent = allCargos.length;
+            document.getElementById('totalWeight').textContent = totalWeight.toFixed(0) + ' kg';
+            document.getElementById('selectedCount').textContent = selectedCargos.size;
+            document.getElementById('activeUsers').textContent = users.size;
+        }
+
+        async function createDistribution() {
+            if (selectedCargos.size === 0) {
+                alert('❌ Lütfen en az bir kargo seçin!');
+                return;
+            }
+
+            const mode = document.getElementById('modeSelect').value;
+            const algorithm = document.getElementById('algorithmSelect').value;
+
+            // Collect vehicle start and end locations (single selection for all vehicles)
+            const vehicleStartLocations = {};
+            const vehicleEndLocations = {};
+
+            const startValue = document.getElementById('vehicleStartLocation').value;
+            const endValue = document.getElementById('vehicleEndLocation').value;
+
+            console.log('🔍 Dropdown values:');
+            console.log('  Start value:', startValue);
+            console.log('  End value:', endValue);
+
+            if (startValue) {
+                vehicleStartLocations['all'] = parseInt(startValue);
+                console.log('  ✅ Sending start:', vehicleStartLocations['all']);
+            }
+            if (endValue) {
+                vehicleEndLocations['all'] = parseInt(endValue);
+                console.log('  ✅ Sending end:', vehicleEndLocations['all']);
+            }
+
+            if (!confirm(`${selectedCargos.size} kargo ile ${mode} modda dağıtım başlatılacak. Onaylıyor musunuz?`)) return;
 
             try {
-                await fetch(`${API_URL}/auth/logout`, {
+                const response = await fetch(`${API_URL}/admin/distribution/create`, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        cargo_ids: Array.from(selectedCargos),
+                        mode: mode,
+                        algorithm: algorithm,
+                        vehicle_start_locations: vehicleStartLocations,
+                        vehicle_end_locations: vehicleEndLocations
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`✅ Dağıtım Başarılı!\n\nSenaryo: #${data.scenario_id}\nTeslim: ${data.delivered_count}\nMaliyet: ${data.total_cost} TL`);
+                    selectedCargos.clear();
+                    refresh();
+
+                    // Show routes on map
+                    displayRoutes(data.scenario_id);
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            } catch (error) {
+                console.error('Distribution error:', error);
+                alert('❌ Hata oluştu!');
+            }
+        }
+
+        async function displayRoutes(scenarioId) {
+            try {
+                console.log('Fetching routes for scenario:', scenarioId);
+                const response = await fetch(`${API_URL}/routes/${scenarioId}`, {
                     credentials: 'include'
                 });
-                console.log('✓ Logout API success');
+                const data = await response.json();
+
+                console.log('Routes data:', data);
+
+                if (data.success && data.data && data.data.length > 0) {
+                    initMap(); // Ensure map is initialized before drawing
+                    drawRoutes(data.data);
+                    document.getElementById('routeLegend').style.display = 'block';
+                } else {
+                    console.warn('No routes found or empty data');
+                    alert('⚠️ Rota verisi bulunamadı');
+                }
             } catch (error) {
-                console.error('Logout error:', error);
+                console.error('Route display error:', error);
+                alert('❌ Rota gösterim hatası: ' + error.message);
+            }
+        }
+
+        // Load districts - COPIED FROM USER_DASHBOARD.HTML (WORKING VERSION)
+        async function loadDistricts() {
+            try {
+                const response = await fetch(`${API_URL}/districts`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                console.log('Districts loaded:', data);
+
+                // Populate vehicle location dropdowns
+                const startSelect = document.getElementById('vehicleStartLocation');
+                const endSelect = document.getElementById('vehicleEndLocation');
+
+                if (startSelect && endSelect && data.data) {
+                    // Add "Otomatik" option first (will be selected by default)
+                    const defaultStart = document.createElement('option');
+                    defaultStart.value = '';
+                    defaultStart.textContent = 'Otomatik (Son Konum)';
+                    startSelect.appendChild(defaultStart);
+
+                    const defaultEnd = document.createElement('option');
+                    defaultEnd.value = '';
+                    defaultEnd.textContent = 'Otomatik (Başladığı Yer)';
+                    endSelect.appendChild(defaultEnd);
+
+                    // Now add all districts
+                    data.data.forEach(district => {
+                        console.log(`Adding district: ID=${district.id}, Name=${district.name}`);
+
+                        const startOption = document.createElement('option');
+                        startOption.value = district.id;
+                        startOption.textContent = district.name;
+                        startSelect.appendChild(startOption);
+
+                        const endOption = document.createElement('option');
+                        endOption.value = district.id;
+                        endOption.textContent = district.name;
+                        endSelect.appendChild(endOption);
+                    });
+                    console.log(`✅ ${data.data.length} districts loaded to dropdowns`);
+                }
+
+
+                // Keep for map markers
+                districts = data.data || [];
+            } catch (error) {
+                console.error('District load error:', error);
+            }
+        }
+
+        // Populate vehicle location dropdowns
+        function populateVehicleDropdowns(districtList) {
+            console.log('populateVehicleDropdowns called with:', districtList);
+
+            const startSelect = document.getElementById('vehicleStartLocation');
+            const endSelect = document.getElementById('vehicleEndLocation');
+
+            console.log('Start select element:', startSelect);
+            console.log('End select element:', endSelect);
+
+            if (!startSelect || !endSelect) {
+                console.error('❌ Dropdown elements not found!');
+                console.error('vehicleStartLocation exists:', !!startSelect);
+                console.error('vehicleEndLocation exists:', !!endSelect);
+                return;
             }
 
-            window.location.href = 'login.html';
+            if (!districtList || districtList.length === 0) {
+                console.error('❌ No districts to populate!');
+                return;
+            }
+
+            // Add districts to dropdowns
+            districtList.forEach(district => {
+                const startOption = document.createElement('option');
+                startOption.value = district.id;
+                startOption.textContent = district.name;
+                startSelect.appendChild(startOption);
+
+                const endOption = document.createElement('option');
+                endOption.value = district.id;
+                endOption.textContent = district.name;
+                endSelect.appendChild(endOption);
+            });
+
+            console.log(`✅ ${districtList.length} districts loaded into vehicle location dropdowns`);
+            console.log('Start select now has', startSelect.options.length, 'options');
+            console.log('End select now has', endSelect.options.length, 'options');
+        }
+
+        function addDistrictMarkers() {
+            // Clear existing markers
+            districtMarkers.forEach(m => map.removeLayer(m));
+            districtMarkers = [];
+
+            districts.forEach(district => {
+                const marker = L.circleMarker([district.latitude, district.longitude], {
+                    radius: 8,
+                    fillColor: '#6366f1',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+
+                marker.bindPopup(`
+                    <div style="text-align: center;">
+                        <strong style="font-size: 14px;">${district.name}</strong><br>
+                        <small style="color: #666;">İlçe Merkezi</small>
+                    </div>
+                `);
+
+                districtMarkers.push(marker);
+            });
+        }
+
+        function initMap() {
+            if (map) {
+                return; // Already initialized
+            }
+
+            console.log('Initializing map...');
+            map = L.map('map').setView([40.7654, 29.9407], 10); // Kocaeli center
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            console.log('Map initialized');
+        }
+
+        function drawRoutes(routes) {
+            console.log('Drawing routes:', routes.length);
+
+            // Clear existing routes
+            routeLayers.forEach(layer => map.removeLayer(layer));
+            routeLayers = [];
+
+            const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+            const legend = document.getElementById('routeLegend');
+            legend.innerHTML = '<h3 style="margin-bottom: 1rem;">Rotalar:</h3>';
+
+            routes.forEach((route, index) => {
+                const color = colors[index % colors.length];
+
+                console.log('Route', index, ':', route);
+
+                try {
+                    // Parse route_geometry from backend
+                    let routeGeometry;
+                    if (typeof route.route_geometry === 'string') {
+                        routeGeometry = JSON.parse(route.route_geometry.replace(/'/g, '"'));
+                    } else {
+                        routeGeometry = route.route_geometry;
+                    }
+
+                    // Check if we have OSM FeatureCollection
+                    if (routeGeometry && routeGeometry.type === 'FeatureCollection' && routeGeometry.features) {
+                        console.log(`✓ Rota ${index + 1}: OSM FeatureCollection ile çiziliyor (${routeGeometry.features.length} segment)`);
+
+                        let stopNumber = 1;
+
+                        // Draw each feature's geometry
+                        routeGeometry.features.forEach((feature, segmentIndex) => {
+                            if (feature.geometry && feature.geometry.type === 'LineString') {
+                                // OSM coordinates are [lon, lat], Leaflet needs [lat, lon]
+                                const latlngs = feature.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+
+                                const polyline = L.polyline(latlngs, {
+                                    color: color,
+                                    weight: 4,
+                                    opacity: 0.8,
+                                    smoothFactor: 1
+                                }).addTo(map);
+
+                                polyline.bindPopup(`
+                                    <div style="min-width: 200px;">
+                                        <strong style="font-size: 14px;">🚚 Rota ${index + 1} - Segment ${segmentIndex + 1}</strong><br>
+                                        <hr style="margin: 8px 0; border-color: #ddd;">
+                                        ${feature.properties.from ? `<strong>Başlangıç:</strong> ${feature.properties.from}<br>` : ''}
+                                        ${feature.properties.to ? `<strong>Bitiş:</strong> ${feature.properties.to}<br>` : ''}
+                                        ${feature.properties.distance_km ? `<strong>Mesafe:</strong> ${feature.properties.distance_km} km<br>` : ''}
+                                        ${feature.properties.duration_min ? `<strong>Süre:</strong> ${feature.properties.duration_min} dakika<br>` : ''}
+                                    </div>
+                                `);
+
+                                routeLayers.push(polyline);
+
+                                // Add numbered markers for start and end of each segment
+                                if (latlngs.length > 0) {
+                                    // Start marker
+                                    const startMarker = L.circleMarker(latlngs[0], {
+                                        radius: 6,
+                                        fillColor: color,
+                                        color: '#fff',
+                                        weight: 2,
+                                        opacity: 1,
+                                        fillOpacity: 0.9
+                                    }).addTo(map);
+
+                                    startMarker.bindTooltip(`${stopNumber}`, {
+                                        permanent: false,
+                                        direction: 'center',
+                                        className: 'route-number-tooltip'
+                                    });
+
+                                    routeLayers.push(startMarker);
+
+                                    // End marker (only if last segment)
+                                    if (segmentIndex === routeGeometry.features.length - 1) {
+                                        stopNumber++;
+                                        const endMarker = L.circleMarker(latlngs[latlngs.length - 1], {
+                                            radius: 6,
+                                            fillColor: color,
+                                            color: '#fff',
+                                            weight: 2,
+                                            opacity: 1,
+                                            fillOpacity: 0.9
+                                        }).addTo(map);
+
+                                        endMarker.bindTooltip(`${stopNumber}`, {
+                                            permanent: false,
+                                            direction: 'center',
+                                            className: 'route-number-tooltip'
+                                        });
+
+                                        routeLayers.push(endMarker);
+                                    }
+
+                                    stopNumber++;
+                                }
+
+                                // Fit bounds to first segment
+                                if (index === 0 && segmentIndex === 0) {
+                                    map.fitBounds(polyline.getBounds().pad(0.1));
+                                }
+                            }
+                        });
+                    } else if (routeGeometry && routeGeometry.type === 'LineString' && routeGeometry.coordinates) {
+                        console.log(`✓ Rota ${index + 1}: LineString geometrisi ile çiziliyor`);
+
+                        // OSM coordinates are [lon, lat], Leaflet needs [lat, lon]
+                        const latlngs = routeGeometry.coordinates.map(coord => [coord[1], coord[0]]);
+
+                        const polyline = L.polyline(latlngs, {
+                            color: color,
+                            weight: 4,
+                            opacity: 0.8,
+                            smoothFactor: 1
+                        }).addTo(map);
+
+                        polyline.bindPopup(`
+                            <div style="min-width: 200px;">
+                                <strong style="font-size: 14px;">🚚 Rota ${index + 1}</strong><br>
+                                <hr style="margin: 8px 0; border-color: #ddd;">
+                                <strong>Araç:</strong> ${route.vehicle_type_name}<br>
+                                <strong>Mesafe:</strong> ${route.distance ? route.distance.toFixed(1) : 0} km<br>
+                            </div>
+                        `);
+
+                        routeLayers.push(polyline);
+
+                        // Fit bounds to first route
+                        if (index === 0) {
+                            map.fitBounds(polyline.getBounds().pad(0.1));
+                        }
+                    } else if (route.stops && route.stops.length > 0) {
+                        // Fallback: Use stops to draw straight line
+                        console.log(`⚠️  Rota ${index + 1}: Stops ile düz çizgi çiziliyor`);
+                        const coordinates = route.stops.map(stop => [stop.latitude, stop.longitude]);
+
+                        const polyline = L.polyline(coordinates, {
+                            color: color,
+                            weight: 4,
+                            opacity: 0.8,
+                            dashArray: '10, 5'  // Dashed to indicate fallback
+                        }).addTo(map);
+
+                        polyline.bindPopup(`
+                            <div style="min-width: 200px;">
+                                <strong style="font-size: 14px;">🚚 Rota ${index + 1}</strong><br>
+                                <hr style="margin: 8px 0; border-color: #ddd;">
+                                <strong>Araç:</strong> ${route.vehicle_type_name}<br>
+                                <strong>Duraklar:</strong><br>
+                                ${route.stops.map((s, i) => `${i + 1}. ${s.district_name}`).join('<br>')}
+                            </div>
+                        `);
+
+                        routeLayers.push(polyline);
+
+                        // Add markers for stops
+                        route.stops.forEach((stop, stopIndex) => {
+                            const marker = L.circleMarker([stop.latitude, stop.longitude], {
+                                radius: 6,
+                                fillColor: color,
+                                color: '#fff',
+                                weight: 2,
+                                opacity: 1,
+                                fillOpacity: 0.9
+                            }).addTo(map);
+
+                            marker.bindTooltip(`${stopIndex + 1}`, {
+                                permanent: false,
+                                direction: 'center',
+                                className: 'route-number-tooltip'
+                            });
+
+                            routeLayers.push(marker);
+                        });
+
+                        if (index === 0) {
+                            map.fitBounds(polyline.getBounds().pad(0.1));
+                        }
+                    } else {
+                        console.warn('Route', index, 'has no geometry or stops');
+                    }
+
+                    // Legend
+                    legend.innerHTML += `
+                        <div class="route-item">
+                            <div class="route-color" style="background: ${color};"></div>
+                            <span>Araç ${route.vehicle_id} - ${route.vehicle_type_name} (${parseFloat(route.distance || 0).toFixed(1)} km)</span>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Route', index, 'draw error:', error);
+                }
+            });
+
+            console.log('Routes drawn successfully');
+        }
+
+        function closeMap() {
+            // Clear routes but keep map
+            routeLayers.forEach(layer => map.removeLayer(layer));
+            routeLayers = [];
+            document.getElementById('routeLegend').style.display = 'none';
+            document.getElementById('routeLegend').innerHTML = '';
+        }
+
+        // Vehicle Location Management
+        async function loadVehicleLocations() {
+            try {
+                // Load districts for dropdown
+                const districtResponse = await fetch(`${API_URL}/districts`, { credentials: 'include' });
+                const districtData = await districtResponse.json();
+
+                if (!districtData.success) return;
+
+                const districtsMap = districtData.data;
+
+                // Create vehicle location selectors (3 vehicles)
+                const container = document.getElementById('vehicleLocations');
+                container.innerHTML = '';
+
+                for (let i = 1; i <= 3; i++) {
+                    const select = document.createElement('select');
+                    select.id = `vehicle${i}Location`;
+                    select.className = 'form-control';
+                    select.style.fontSize = '0.9rem';
+
+                    // Default option
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = `Araç ${i} - Otomatik (Son Konum)`;
+                    select.appendChild(defaultOption);
+
+                    // District options
+                    districtsMap.forEach(district => {
+                        const option = document.createElement('option');
+                        option.value = district.id;
+                        option.textContent = district.name;
+                        select.appendChild(option);
+                    });
+
+                    container.appendChild(select);
+                }
+
+                console.log('✓ Vehicle location selectors loaded');
+            } catch (error) {
+                console.error('Vehicle location load error:', error);
+            }
+        }
+
+        function refresh() {
+            loadPendingCargos();
         }
 
         // System Settings Functions
-        async function showSystemSettings() {
-            console.log('🔧 Loading system settings...');
+        async function showSettings() {
             try {
-                const response = await fetch(`${API_URL}/system-parameters`, {
-                    credentials: 'include'
-                });
-
-                console.log('Response status:', response.status);
+                const response = await fetch(`${API_URL}/system-parameters`, { credentials: 'include' });
                 const data = await response.json();
-                console.log('Response data:', data);
 
                 if (data.success) {
-                    console.log('✓ Settings loaded successfully');
-                    console.log('Vehicle types:', data.data.vehicle_types);
+                    document.getElementById('costPerKm').value = data.data.cost_per_km;
 
-                    // Set cost_per_km
-                    document.getElementById('costPerKm').value = data.data.cost_per_km || 1.0;
+                    const vehicleCostsDiv = document.getElementById('vehicleCosts');
+                    vehicleCostsDiv.innerHTML = '';
 
-                    // Create inputs for each vehicle type
-                    const vehicleTypes = data.data.vehicle_types || [];
-                    const container = document.getElementById('vehicleCostInputs');
-
-                    if (vehicleTypes.length === 0) {
-                        container.innerHTML = '<p style="color: #ff6b6b;">Araç tipi bulunamadı</p>';
-                    } else {
-                        container.innerHTML = vehicleTypes.map(v => `
-                            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bg); border-radius: 8px;">
-                                <div style="flex: 1;">
-                                    <div style="font-weight: 500; font-size: 1rem;">${v.name}</div>
-                                    <div style="font-size: 0.85rem; opacity: 0.7;">Kapasite: ${v.capacity_kg} kg</div>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="number" 
-                                           id="vehicleCost_${v.id}" 
-                                           value="${v.rental_cost || 200}" 
-                                           step="10" 
-                                           min="0"
-                                           style="width: 120px; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border); text-align: right; font-size: 1rem;">
-                                    <span style="font-weight: 500;">TL</span>
-                                </div>
+                    data.data.vehicle_types.forEach(vt => {
+                        vehicleCostsDiv.innerHTML += `
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">${vt.name} (${vt.capacity_kg} kg)</label>
+                                <input type="number" id="vehicle_${vt.id}" step="1" class="form-control" value="${vt.rental_cost}" placeholder="Kiralama ücreti">
                             </div>
-                        `).join('');
+                        `;
+                    });
 
-                        // Store vehicle IDs for save function
-                        window.vehicleTypeIds = vehicleTypes.map(v => v.id);
-                    }
-
-                    // Show modal
-                    document.getElementById('settingsModal').style.display = 'flex';
-                    console.log('✓ Modal displayed');
-                } else {
-                    console.error('API returned success=false:', data.error);
-                    alert('API Hatası: ' + (data.error || 'Bilinmeyen hata'));
+                    document.getElementById('settingsModal').style.display = 'block';
                 }
             } catch (error) {
                 console.error('Settings load error:', error);
-                console.error('Error details:', error.message, error.stack);
-                alert('Ayarlar yüklenemedi! Konsolu kontrol edin.');
+                alert('Ayarlar yüklenemedi!');
             }
         }
 
-        function closeSystemSettings() {
-            document.getElementById('settingsModal').style.display = 'none';
-        }
-
-        async function saveSystemSettings() {
-            const costPerKm = document.getElementById('costPerKm').value;
-
-            // Collect vehicle costs
-            const vehicleCosts = {};
-            if (window.vehicleTypeIds) {
-                window.vehicleTypeIds.forEach(id => {
-                    const input = document.getElementById(`vehicleCost_${id}`);
-                    if (input) {
-                        vehicleCosts[id] = parseFloat(input.value);
-                    }
-                });
-            }
-
-            console.log('Saving:', { cost_per_km: costPerKm, vehicle_costs: vehicleCosts });
-
+        async function saveSettings() {
             try {
+                const costPerKm = document.getElementById('costPerKm').value;
+                const vehicleCosts = {};
+
+                document.querySelectorAll('[id^="vehicle_"]').forEach(input => {
+                    const vehicleId = input.id.replace('vehicle_', '');
+                    vehicleCosts[vehicleId] = parseFloat(input.value);
+                });
+
                 const response = await fetch(`${API_URL}/system-parameters`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -372,10 +1332,10 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    alert('✅ Parametreler güncellendi!');
-                    closeSystemSettings();
+                    alert('✅ Ayarlar kaydedildi!');
+                    closeSettings();
                 } else {
-                    alert('❌ Hata: ' + data.error);
+                    alert('❌ ' + data.error);
                 }
             } catch (error) {
                 console.error('Save error:', error);
@@ -383,8 +1343,44 @@
             }
         }
 
-        // Run on load
-        checkAuthentication();
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // Auth
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_URL}/auth/status`, { credentials: 'include' });
+                const data = await response.json();
+
+                if (!data.authenticated || !data.user || data.user.role !== 'admin') {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                document.getElementById('adminName').textContent = data.user.username;
+            } catch (error) {
+                console.error('Auth error:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = 'login.html';
+        });
+
+        // Initialize
+        checkAuth();
+        loadPendingCargos();
+
+        // Initialize map on page load
+        setTimeout(() => {
+            initMap();
+            loadDistricts(); // Load and display district markers
+        }, 500);
+
+        setInterval(refresh, 30000); // Auto-refresh every 30s
     </script>
 </body>
 

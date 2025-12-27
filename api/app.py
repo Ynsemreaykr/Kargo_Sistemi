@@ -35,10 +35,28 @@ Session(app)
 # CORS ayarları (frontend'den erişim için)
 CORS(app, supports_credentials=True, origins=['http://localhost:8000', 'http://127.0.0.1:8000'])
 
-# Blueprint'leri kaydet
+# Blueprint imports
+from scenario_details import api_details
+from charts import charts_bp
+from user_cargo import user_cargo_bp
+from admin_cargo import admin_cargo_bp
+from admin_distribution import admin_distribution_bp
+
+# Register blueprints
 app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(auth, url_prefix='/api/auth')
 app.register_blueprint(params_bp, url_prefix='/api')
+app.register_blueprint(api_details, url_prefix='/api')
+app.register_blueprint(charts_bp, url_prefix='/api')
+app.register_blueprint(user_cargo_bp, url_prefix='/api')
+app.register_blueprint(admin_cargo_bp, url_prefix='/api')
+app.register_blueprint(admin_distribution_bp, url_prefix='/api')
+
+print("✓ Scenario details API registered")
+print("✓ Charts API registered")
+print("✓ User cargo API registered")
+print("✓ Admin cargo API registered")
+print("✓ Admin distribution API registered")
 print("✓ System parameters API registered")
 
 

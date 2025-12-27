@@ -4,11 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giriş - Kargo İşletme Sistemi</title>
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
+    <title>Giriş - Kargo Sistemi</title>
     <style>
         * {
             margin: 0;
@@ -17,467 +13,160 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            position: relative;
-            overflow: hidden;
+            color: #f1f5f9;
         }
 
-        /* Animated background shapes */
-        body::before {
-            content: '';
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            top: -250px;
-            left: -250px;
-            animation: float 20s infinite ease-in-out;
-        }
-
-        body::after {
-            content: '';
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            bottom: -200px;
-            right: -200px;
-            animation: float 15s infinite ease-in-out reverse;
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0) translateX(0);
-            }
-
-            50% {
-                transform: translateY(-30px) translateX(30px);
-            }
-        }
-
-        .container {
-            position: relative;
-            z-index: 1;
+        .login-container {
+            background: #1e293b;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             width: 100%;
-            max-width: 450px;
-            padding: 20px;
+            max-width: 400px;
+            border: 1px solid #334155;
         }
 
-        .auth-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 48px 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.5s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .logo {
+        .login-header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 2rem;
         }
 
-        .logo-icon {
-            font-size: 56px;
-            margin-bottom: 16px;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        h1 {
-            font-size: 28px;
+        .login-header h1 {
+            font-size: 2rem;
             font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 8px;
-            text-align: center;
+            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
         }
 
-        .subtitle {
-            color: #6b7280;
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 32px;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            background: #f3f4f6;
-            padding: 4px;
-            border-radius: 12px;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            background: transparent;
-            color: #6b7280;
-            font-weight: 500;
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .tab.active {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .tab:hover:not(.active) {
-            color: #667eea;
-        }
-
-        .form-section {
-            display: none;
-        }
-
-        .form-section.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
+        .login-header p {
+            color: #94a3b8;
+            font-size: 0.95rem;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
         }
 
         label {
             display: block;
-            font-size: 14px;
+            margin-bottom: 0.5rem;
             font-weight: 500;
-            color: #374151;
-            margin-bottom: 8px;
+            color: #cbd5e1;
+            font-size: 0.9rem;
         }
 
         input {
             width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 15px;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s ease;
-            background: white;
+            padding: 0.75rem 1rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            color: #f1f5f9;
+            font-size: 1rem;
+            transition: all 0.3s;
         }
 
         input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
         }
 
         .btn {
             width: 100%;
-            padding: 16px;
+            padding: 1rem;
+            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            color: white;
             border: none;
-            border-radius: 12px;
-            font-size: 16px;
+            border-radius: 10px;
             font-weight: 600;
+            font-size: 1rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            margin-top: 8px;
-        }
-
-        .btn-primary:hover {
+        .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
         }
 
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .error-message {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            margin-bottom: 20px;
-            display: none;
-            animation: shake 0.5s;
-        }
-
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            25% {
-                transform: translateX(-10px);
-            }
-
-            75% {
-                transform: translateX(10px);
-            }
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        .success-message {
-            background: #d1fae5;
-            color: #065f46;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            margin-bottom: 20px;
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
             display: none;
         }
 
-        .success-message.show {
-            display: block;
-        }
-
-        .loading {
+        .success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            color: #6ee7b7;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
             display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .loading.show {
-            display: flex;
-        }
-
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid #e5e7eb;
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 24px;
-            color: white;
-            font-size: 13px;
-        }
-
-        @media (max-width: 480px) {
-            .auth-card {
-                padding: 32px 24px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="auth-card">
-            <div class="logo">
-                <div class="logo-icon">🚚</div>
-                <h1>Kargo İşletme Sistemi</h1>
-                <p class="subtitle">Kocaeli Üniversitesi - Yazılım Lab III</p>
-            </div>
-
-            <!-- Tabs -->
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('login')">Giriş Yap</button>
-                <button class="tab" onclick="switchTab('register')">Kayıt Ol</button>
-            </div>
-
-            <!-- Error & Success Messages -->
-            <div id="errorMessage" class="error-message"></div>
-            <div id="successMessage" class="success-message"></div>
-
-            <!-- Login Form -->
-            <div id="loginForm" class="form-section active">
-                <form onsubmit="handleLogin(event)">
-                    <div class="form-group">
-                        <label for="loginUsername">Kullanıcı Adı</label>
-                        <input type="text" id="loginUsername" required autocomplete="username">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="loginPassword">Şifre</label>
-                        <input type="password" id="loginPassword" required autocomplete="current-password">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" id="loginBtn">
-                        Giriş Yap
-                    </button>
-
-                    <div class="loading" id="loginLoading">
-                        <div class="spinner"></div>
-                        <span>Giriş yapılıyor...</span>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Register Form -->
-            <div id="registerForm" class="form-section">
-                <form onsubmit="handleRegister(event)">
-                    <div class="form-group">
-                        <label for="registerUsername">Kullanıcı Adı</label>
-                        <input type="text" id="registerUsername" required minlength="3" autocomplete="username">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="registerPassword">Şifre</label>
-                        <input type="password" id="registerPassword" required minlength="6" autocomplete="new-password">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="registerPasswordConfirm">Şifre Tekrar</label>
-                        <input type="password" id="registerPasswordConfirm" required minlength="6"
-                            autocomplete="new-password">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" id="registerBtn">
-                        Kayıt Ol
-                    </button>
-
-                    <div class="loading" id="registerLoading">
-                        <div class="spinner"></div>
-                        <span>Kayıt oluşturuluyor...</span>
-                    </div>
-                </form>
-            </div>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>📦 Kargo Sistemi</h1>
+            <p>Hesabınıza giriş yapın</p>
         </div>
 
-        <div class="footer">
-            <p>💡 Test Kullanıcıları: admin/admin123 veya user/user123</p>
-        </div>
+        <div id="errorMsg" class="error"></div>
+        <div id="successMsg" class="success"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Kullanıcı Adı</label>
+                <input type="text" id="username" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Şifre</label>
+                <input type="password" id="password" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn">Giriş Yap</button>
+        </form>
     </div>
 
     <script>
         const API_URL = 'http://localhost:5002/api';
 
-        // Tab switching
-        function switchTab(tab) {
-            const tabs = document.querySelectorAll('.tab');
-            const forms = document.querySelectorAll('.form-section');
-
-            tabs.forEach(t => t.classList.remove('active'));
-            forms.forEach(f => f.classList.remove('active'));
-
-            if (tab === 'login') {
-                tabs[0].classList.add('active');
-                document.getElementById('loginForm').classList.add('active');
-            } else {
-                tabs[1].classList.add('active');
-                document.getElementById('registerForm').classList.add('active');
-            }
-
-            hideMessages();
-        }
-
-        // Show error message
-        function showError(message) {
-            const errorEl = document.getElementById('errorMessage');
-            errorEl.textContent = message;
-            errorEl.classList.add('show');
-            document.getElementById('successMessage').classList.remove('show');
-        }
-
-        // Show success message
-        function showSuccess(message) {
-            const successEl = document.getElementById('successMessage');
-            successEl.textContent = message;
-            successEl.classList.add('show');
-            document.getElementById('errorMessage').classList.remove('show');
-        }
-
-        // Hide all messages
-        function hideMessages() {
-            document.getElementById('errorMessage').classList.remove('show');
-            document.getElementById('successMessage').classList.remove('show');
-        }
-
-        // Handle login
-        async function handleLogin(e) {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            hideMessages();
 
-            const username = document.getElementById('loginUsername').value.trim();
-            const password = document.getElementById('loginPassword').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
 
-            const btn = document.getElementById('loginBtn');
-            const loading = document.getElementById('loginLoading');
-
-            btn.disabled = true;
-            loading.classList.add('show');
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
 
             try {
                 const response = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({ username, password })
                 });
@@ -485,103 +174,25 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showSuccess('Giriş başarılı! Yönlendiriliyorsunuz...');
+                    successMsg.textContent = 'Giriş başarılı! Yönlendiriliyorsunuz...';
+                    successMsg.style.display = 'block';
 
-                    // Redirect based on role
                     setTimeout(() => {
-                        if (data.data.role === 'ADMIN') {
+                        if (data.role === 'admin') {
                             window.location.href = 'admin.html';
                         } else {
                             window.location.href = 'index.html';
                         }
-                    }, 1000);
+                    }, 500);
                 } else {
-                    showError(data.error || 'Giriş başarısız');
+                    errorMsg.textContent = data.error || 'Giriş başarısız!';
+                    errorMsg.style.display = 'block';
                 }
             } catch (error) {
-                console.error('Login error:', error);
-                showError('Bağlantı hatası. Backend çalışıyor mu?');
-            } finally {
-                btn.disabled = false;
-                loading.classList.remove('show');
+                errorMsg.textContent = 'Bağlantı hatası!';
+                errorMsg.style.display = 'block';
             }
-        }
-
-        // Handle register
-        async function handleRegister(e) {
-            e.preventDefault();
-            hideMessages();
-
-            const username = document.getElementById('registerUsername').value.trim();
-            const password = document.getElementById('registerPassword').value;
-            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
-
-            if (password !== passwordConfirm) {
-                showError('Şifreler eşleşmiyor');
-                return;
-            }
-
-            const btn = document.getElementById('registerBtn');
-            const loading = document.getElementById('registerLoading');
-
-            btn.disabled = true;
-            loading.classList.add('show');
-
-            try {
-                const response = await fetch(`${API_URL}/auth/register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showSuccess(data.message || 'Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
-
-                    // Switch to login tab
-                    setTimeout(() => {
-                        switchTab('login');
-                        document.getElementById('loginUsername').value = username;
-                    }, 1500);
-                } else {
-                    showError(data.error || 'Kayıt başarısız');
-                }
-            } catch (error) {
-                console.error('Register error:', error);
-                showError('Bağlantı hatası. Backend çalışıyor mu?');
-            } finally {
-                btn.disabled = false;
-                loading.classList.remove('show');
-            }
-        }
-
-        // Check if already logged in
-        async function checkAuth() {
-            try {
-                const response = await fetch(`${API_URL}/auth/status`, {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-
-                if (data.authenticated) {
-                    // Already logged in, redirect
-                    if (data.data.role === 'ADMIN') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'index.html';
-                    }
-                }
-            } catch (error) {
-                console.log('Not authenticated');
-            }
-        }
-
-        // Check auth is removed - kullanıcı her seferinde giriş yapmalı
-
+        });
     </script>
 </body>
 

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senaryo Detayları - Kargo Sistemi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .details-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            transition: all 0.2s;
+        }
+
+        .back-button:hover {
+            background: var(--bg-hover);
+            transform: translateX(-4px);
+        }
+
+        .scenario-summary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .scenario-summary h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .summary-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            backdrop-filter: blur(10px);
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .vehicles-section {
+            margin-top: 2rem;
+        }
+
+        .vehicles-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+
+        .vehicle-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .vehicle-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .vehicle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .vehicle-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .vehicle-icon {
+            font-size: 2.5rem;
+        }
+
+        .vehicle-info h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .vehicle-capacity {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .cost-badge {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .route-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: var(--radius-md);
+        }
+
+        .route-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .route-stat-label {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            margin-bottom: 0.3rem;
+        }
+
+        .route-stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .cost-breakdown {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+        }
+
+        .cost-breakdown h4 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cost-item:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding-top: 0.75rem;
+            border-top: 2px solid var(--border);
+        }
+
+        .cargo-section h4 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .cargo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .cargo-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--bg);
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--primary);
+        }
+
+        .cargo-icon {
+            font-size: 1.5rem;
+        }
+
+        .cargo-details {
+            flex: 1;
+        }
+
+        .cargo-user {
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .cargo-meta {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            opacity: 0.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">📦 Kargo Sistemi</h1>
+            <div class="user-info" id="userInfo" style="display: none;">
+                <span class="user-name" id="userName"></span>
+                <button class="logout-btn" id="logoutBtn" type="button">
+                    <span class="logout-icon">🚪</span>
+                    <span class="logout-text">Çıkış</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="details-container">
+        <a href="index.html" class="back-button">
+            ← Senaryolara Dön
+        </a>
+
+        <div id="loadingState" class="loading">
+            Senaryo detayları yükleniyor...
+        </div>
+
+        <div id="errorState" class="empty-state" style="display: none;">
+            ❌ Senaryo bulunamadı veya yüklenemedi.
+        </div>
+
+        <div id="contentState" style="display: none;">
+            <!-- Scenario Summary -->
+            <div class="scenario-summary">
+                <h1>📊 Senaryo #<span id="scenarioId"></span></h1>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">📅 Tarih</div>
+                        <div class="summary-value" id="scenarioDate"></div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">🤖 Algoritma</div>
+                        <div class="summary-value" id="scenarioAlgorithm"></div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">💰 Toplam Maliyet</div>
+                        <div class="summary-value" id="scenarioTotalCost"></div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">📍 Toplam Mesafe</div>
+                        <div class="summary-value" id="scenarioTotalDistance"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicles Section -->
+            <div class="vehicles-section">
+                <h2>🚚 Araç Detayları</h2>
+                <div id="vehiclesContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5002/api';
+
+        // Get scenario ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const scenarioId = urlParams.get('id');
+
+        if (!scenarioId) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorState').innerHTML = '❌ Senaryo ID\'si belirtilmedi.';
+        } else {
+            loadScenarioDetails();
+        }
+
+        async function loadScenarioDetails() {
+            try {
+                const response = await fetch(`${API_URL}/scenarios/${scenarioId}/details`, {
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Senaryo yüklenemedi');
+                }
+
+                displayScenarioDetails(result.data);
+
+            } catch (error) {
+                console.error('Error loading scenario:', error);
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'block';
+                document.getElementById('errorState').innerHTML = `❌ ${error.message}`;
+            }
+        }
+
+        function displayScenarioDetails(data) {
+            const { scenario, vehicles, cost_per_km } = data;
+
+            // Hide loading, show content
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('contentState').style.display = 'block';
+
+            // Display scenario summary
+            document.getElementById('scenarioId').textContent = scenario.id;
+            document.getElementById('scenarioDate').textContent = new Date(scenario.created_at).toLocaleString('tr-TR');
+            document.getElementById('scenarioAlgorithm').textContent = scenario.algorithm.toUpperCase();
+            document.getElementById('scenarioTotalCost').textContent = `${scenario.total_cost.toFixed(2)} TL`;
+            document.getElementById('scenarioTotalDistance').textContent = `${scenario.total_distance.toFixed(2)} km`;
+
+            // Display vehicles
+            const vehiclesContainer = document.getElementById('vehiclesContainer');
+
+            if (vehicles.length === 0) {
+                vehiclesContainer.innerHTML = '<div class="empty-state">Bu senaryoda araç kullanılmamış.</div>';
+                return;
+            }
+
+            vehiclesContainer.innerHTML = vehicles.map((vehicle, index) => {
+                const icon = getVehicleIcon(vehicle.capacity_kg);
+                const cargosHtml = vehicle.cargo_users.length > 0
+                    ? vehicle.cargo_users.map(cargo => `
+                        <div class="cargo-item">
+                            <div class="cargo-icon">📦</div>
+                            <div class="cargo-details">
+                                <div class="cargo-user">${cargo.username}</div>
+                                <div class="cargo-meta">${cargo.weight_kg} kg → ${cargo.destination}</div>
+                            </div>
+                        </div>
+                    `).join('')
+                    : '<div class="empty-state" style="padding: 1rem;">Bu araç kargo taşımadı.</div>';
+
+                return `
+                    <div class="vehicle-card">
+                        <div class="vehicle-header">
+                            <div class="vehicle-title">
+                                <div class="vehicle-icon">${icon}</div>
+                                <div class="vehicle-info">
+                                    <h3>${vehicle.vehicle_type} #${vehicle.vehicle_id}</h3>
+                                    <div class="vehicle-capacity">Kapasite: ${vehicle.capacity_kg} kg</div>
+                                </div>
+                            </div>
+                            <div class="cost-badge">
+                                💰 ${vehicle.route.total_cost} TL
+                            </div>
+                        </div>
+
+                        <div class="route-info">
+                            <div class="route-stat">
+                                <div class="route-stat-label">📍 Durak Sayısı</div>
+                                <div class="route-stat-value">${vehicle.route.stops}</div>
+                            </div>
+                            <div class="route-stat">
+                                <div class="route-stat-label">🛣️ Toplam Mesafe</div>
+                                <div class="route-stat-value">${vehicle.route.distance_km} km</div>
+                            </div>
+                            <div class="route-stat">
+                                <div class="route-stat-label">📦 Kargo Sayısı</div>
+                                <div class="route-stat-value">${vehicle.cargo_users.length}</div>
+                            </div>
+                        </div>
+
+                        <div class="cost-breakdown">
+                            <h4>💵 Maliyet Detayı</h4>
+                            <div class="cost-item">
+                                <span>Yakıt (${vehicle.route.distance_km} km × ${cost_per_km} TL/km)</span>
+                                <span>${vehicle.route.fuel_cost} TL</span>
+                            </div>
+                            <div class="cost-item">
+                                <span>Araç Kiralama</span>
+                                <span>${vehicle.rental_cost} TL</span>
+                            </div>
+                            <div class="cost-item">
+                                <span>Toplam</span>
+                                <span>${vehicle.route.total_cost} TL</span>
+                            </div>
+                        </div>
+
+                        <div class="cargo-section">
+                            <h4>📦 Taşınan Kargolar (${vehicle.cargo_users.length})</h4>
+                            <div class="cargo-list">
+                                ${cargosHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getVehicleIcon(capacity) {
+            if (capacity <= 500) return '🚗';
+            if (capacity <= 750) return '🚙';
+            return '🚛';
+        }
+
+        // Auth check
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_URL}/auth/status`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.authenticated) {
+                    document.getElementById('userName').textContent = data.user.username;
+                    document.getElementById('userInfo').style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+            }
+        }
+
+        // Logout
+        document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+            await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = 'login.html';
+        });
+
+        checkAuth();
+    </script>
+</body>
+
+</html>

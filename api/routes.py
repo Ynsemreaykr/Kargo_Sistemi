@@ -4,7 +4,8 @@ Flask endpoint'leri
 """
 
 from flask import Blueprint, request, jsonify, session
-from config import execute_query, execute_insert
+from config import get_connection, release_connection, execute_query, execute_insert
+from auth import login_required
 from utils import create_route_geometry
 from algorithms import (
     nearest_neighbor_algorithm,
@@ -12,9 +13,12 @@ from algorithms import (
     calculate_distance_matrix,
     calculate_route_distance,
     calculate_route_cost,
-    calculate_distance_matrix_osm,
-    get_route_geometry_osm
+    calculate_distance_matrix_osm
 )
+import psycopg
+from psycopg.rows import dict_row
+import traceback
+import json
 
 api = Blueprint('api', __name__)
 
@@ -171,7 +175,7 @@ def create_scenario():
         cargo_ids = []
         for cargo in cargos:
             cargo_id = execute_insert(
-                "INSERT INTO cargo (district_id, weight_kg, quantity) VALUES (%s, %s, %s)",
+                "INSERT INTO cargos (destination_district_id, weight_kg, quantity) VALUES (%s, %s, %s)",
                 (cargo['district_id'], cargo['weight_kg'], cargo.get('quantity', 1))
             )
             cargo_ids.append(cargo_id)
@@ -486,50 +490,64 @@ def get_routes(scenario_id):
             "success": true,
             "data": [
                 {
-                    "id": 1,
-                    "vehicle_id": 1,
-                    "distance": 45.5,
-                    "cost": 250.0,
-                    "route_geometry": {...},
-                    "stops": [...]
-                },
-                ...
-            ]
-        }
+    Belirli bir senaryoya ait tüm rotaları getirir
     """
     try:
+        conn = get_connection()
+        if not conn:
+            raise Exception("Database connection failed")
+        
+        cur = conn.cursor(row_factory=dict_row)
+        
         # Rotaları getir
-        routes = execute_query(
-            """
-            SELECT r.*, v.vehicle_type_id, vt.name as vehicle_type_name
+        cur.execute("""
+            SELECT DISTINCT
+                r.id,
+                r.scenario_id,
+                r.vehicle_id,
+                r.total_distance as distance,
+                r.route_geometry,
+                vt.name as vehicle_type_name,
+                vt.capacity_kg,
+                v.is_rented
             FROM routes r
             JOIN vehicles v ON r.vehicle_id = v.id
             JOIN vehicle_types vt ON v.vehicle_type_id = vt.id
             WHERE r.scenario_id = %s
-            """,
-            (scenario_id,)
-        )
+            ORDER BY r.id
+        """, (scenario_id,))
         
-        # Her rota için durakları getir
+        routes = cur.fetchall()
+        
+        # Her rota için detayları ekle
         for route in routes:
-            stops = execute_query(
-                """
-                SELECT rs.stop_order, d.id, d.name, d.latitude, d.longitude
-                FROM route_stops rs
-                JOIN districts d ON rs.district_id = d.id
-                WHERE rs.route_id = %s
-                ORDER BY rs.stop_order
-                """,
-                (route['id'],)
-            )
-            route['stops'] = stops
+            # Route stops/details al
+            cur.execute("""
+                SELECT 
+                    rd.stop_order,
+                    d.id as district_id,
+                    d.name as district_name,
+                    d.latitude,
+                    d.longitude
+                FROM route_details rd
+                JOIN districts d ON rd.district_id = d.id
+                WHERE rd.route_id = %s
+                ORDER BY rd.stop_order
+            """, (route['id'],))
+            
+            route['stops'] = cur.fetchall()
+        
+        cur.close()
+        release_connection(conn)
         
         return jsonify({
             'success': True,
             'data': routes
-        }), 200
+        })
         
     except Exception as e:
+        print(f"❌ Get routes error: {e}")
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)

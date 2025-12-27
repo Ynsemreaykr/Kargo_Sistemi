@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kargo Dağıtım Paneli - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .distribution-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .cargo-table-container {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .cargo-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .cargo-table th,
+        .cargo-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cargo-table th {
+            background: var(--bg);
+            font-weight: 600;
+        }
+
+        .cargo-table tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .checkbox-cell {
+            width: 40px;
+        }
+
+        .distribution-controls {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">📦 Admin - Dağıtım Paneli</h1>
+            <div class="user-info">
+                <span class="user-name" id="adminName"></span>
+                <button class="logout-btn" id="logoutBtn">
+                    <span class="logout-icon">🚪</span>
+                    <span class="logout-text">Çıkış</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="distribution-container">
+        <div style="margin-bottom: 2rem;">
+            <h1>📦 Kargo Dağıtım Yönetimi</h1>
+            <p>Bekleyen kargoları seçin ve dağıtım oluşturun</p>
+        </div>
+
+        <!-- Summary Cards -->
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <div class="summary-card">
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">Toplam Kargo</div>
+                <div class="summary-value" id="totalCargos">0</div>
+            </div>
+            <div class="summary-card">
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">Toplam Ağırlık</div>
+                <div class="summary-value" id="totalWeight">0 kg</div>
+            </div>
+            <div class="summary-card">
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">Seçili Kargo</div>
+                <div class="summary-value" id="selectedCount">0</div>
+            </div>
+        </div>
+
+        <!-- Cargo Table -->
+        <div class="cargo-table-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>Bekleyen Kargolar (Kullanıcı Bazlı)</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <select id="userFilter" class="form-control" style="width: 200px;" onchange="filterByUser()">
+                        <option value="">Tüm Kullanıcılar</option>
+                    </select>
+                    <button onclick="toggleSelectAll()" class="btn btn-secondary btn-small">
+                        Tümünü Seç/Bırak
+                    </button>
+                </div>
+            </div>
+
+            <!-- User-based grouping -->
+            <div id="cargoGroups">
+                <!-- Dynamic user groups -->
+            </div>
+
+            <div id="emptyState" style="text-align: center; padding: 3rem; display: none;">
+                Bekleyen kargo yok.
+            </div>
+        </div>
+
+        <!-- Distribution Controls -->
+        <div class="distribution-controls">
+            <div class="control-group">
+                <label>Mod Seçimi</label>
+                <select id="modeSelect" class="form-control">
+                    <option value="LIMITED">LIMITED (3 Araç)</option>
+                    <option value="UNLIMITED">UNLIMITED (3 + Kiralama)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Algoritma</label>
+                <select id="algorithmSelect" class="form-control">
+                    <option value="hybrid">Hybrid (Önerilen)</option>
+                    <option value="greedy">Greedy</option>
+                    <option value="simulated_annealing">Simulated Annealing</option>
+                </select>
+            </div>
+            <div class="control-group" style="display: flex; align-items: flex-end;">
+                <button onclick="createDistribution()" class="btn btn-primary" style="width: 100%;">
+                    🚀 Dağıtımı Başlat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5002/api';
+        let selectedCargos = new Set();
+        let allCargos = [];
+
+        async function loadPendingCargos() {
+            try {
+                const response = await fetch(`${API_URL}/admin/cargos/pending`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    allCargos = data.cargos;
+                    displayUserGroups(allCargos);
+                    updateSummary();
+                    populateUserFilter(allCargos);
+                }
+            } catch (error) {
+                console.error('Load cargos error:', error);
+            }
+        }
+
+        function displayUserGroups(cargos) {
+            const container = document.getElementById('cargoGroups');
+            const emptyState = document.getElementById('emptyState');
+
+            if (cargos.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            // Group by user
+            const grouped = {};
+            cargos.forEach(cargo => {
+                const key = cargo.user_id;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        user_id: cargo.user_id,
+                        username: cargo.username,
+                        cargos: []
+                    };
+                }
+                grouped[key].cargos.push(cargo);
+            });
+
+            // Display groups
+            container.innerHTML = Object.values(grouped).map(group => `
+                <div class="user-group" style="background: var(--bg-card); padding: 1.5rem; margin-bottom: 1.5rem; border-radius: var(--radius-lg); border-left: 4px solid var(--primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin: 0;">👤 ${group.username} (${group.cargos.length} kargo)</h3>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button onclick="approveUserCargos(${group.user_id})" class="btn btn-primary btn-small">
+                                ✅ Tümünü Onayla
+                            </button>
+                        </div>
+                    </div>
+                    <table class="cargo-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" onchange="toggleUserCargos(${group.user_id}, this.checked)">
+                                </th>
+                                <th>ID</th>
+                                <th>Hedef</th>
+                                <th>Ağırlık</th>
+                                <th>Adet</th>
+                                <th>Tarih</th>
+                                <th>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${group.cargos.map(cargo => `
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" value="${cargo.id}" 
+                                               ${selectedCargos.has(cargo.id) ? 'checked' : ''}
+                                               onchange="toggleCargo(${cargo.id})"
+                                               data-user-id="${cargo.user_id}">
+                                    </td>
+                                    <td>#${cargo.id}</td>
+                                    <td>${cargo.destination}</td>
+                                    <td>${cargo.weight_kg} kg</td>
+                                    <td>${cargo.quantity}</td>
+                                    <td>${cargo.created_at}</td>
+                                    <td>
+                                        <button onclick="approveSingleCargo(${cargo.id})" class="btn btn-small" style="background: #10b981; color: white; padding: 0.25rem 0.75rem;">
+                                            ✓
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `).join('');
+        }
+
+        function populateUserFilter(cargos) {
+            const userFilter = document.getElementById('userFilter');
+            const users = [...new Set(cargos.map(c => JSON.stringify({ id: c.user_id, name: c.username })))].map(JSON.parse);
+
+            userFilter.innerHTML = '<option value="">Tüm Kullanıcılar</option>' +
+                users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+        }
+
+        function filterByUser() {
+            const userId = document.getElementById('userFilter').value;
+            if (userId) {
+                const filtered = allCargos.filter(c => c.user_id == userId);
+                displayUserGroups(filtered);
+            } else {
+                displayUserGroups(allCargos);
+            }
+        }
+
+        async function approveSingleCargo(cargoId) {
+            if (!confirm('Bu kargoyu onaylıyor musunuz?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/admin/cargos/${cargoId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: 'approved' })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    selectedCargos.add(cargoId);
+                    updateSelectedCount();
+                    alert('✅ Kargo onaylandı ve seçildi!');
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            } catch (error) {
+                console.error('Approve error:', error);
+            }
+        }
+
+        async function approveUserCargos(userId) {
+            const userCargos = allCargos.filter(c => c.user_id === userId);
+            if (!confirm(`${userCargos.length} kargo onaylanacak. Devam?`)) return;
+
+            for (const cargo of userCargos) {
+                selectedCargos.add(cargo.id);
+            }
+
+            updateSelectedCount();
+            alert(`✅ ${userCargos.length} kargo seçildi!`);
+        }
+
+        function toggleUserCargos(userId, checked) {
+            const userCargos = allCargos.filter(c => c.user_id === userId);
+            userCargos.forEach(cargo => {
+                if (checked) {
+                    selectedCargos.add(cargo.id);
+                } else {
+                    selectedCargos.delete(cargo.id);
+                }
+            });
+            displayUserGroups(allCargos);
+            updateSelectedCount();
+        }
+
+        function toggleCargo(cargoId) {
+            if (selectedCargos.has(cargoId)) {
+                selectedCargos.delete(cargoId);
+            } else {
+                selectedCargos.add(cargoId);
+            }
+            updateSelectedCount();
+        }
+
+        function toggleSelectAll() {
+            const checkbox = document.getElementById('selectAllCheckbox');
+            if (checkbox.checked) {
+                allCargos.forEach(c => selectedCargos.add(c.id));
+            } else {
+                selectedCargos.clear();
+            }
+            displayCargos(allCargos);
+            updateSelectedCount();
+        }
+
+        function updateSummary() {
+            const totalWeight = allCargos.reduce((sum, c) => sum + c.weight_kg, 0);
+            document.getElementById('totalCargos').textContent = allCargos.length;
+            document.getElementById('totalWeight').textContent = totalWeight + ' kg';
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            document.getElementById('selectedCount').textContent = selectedCargos.size;
+        }
+
+        async function createDistribution() {
+            if (selectedCargos.size === 0) {
+                alert('Lütfen en az bir kargo seçin!');
+                return;
+            }
+
+            const mode = document.getElementById('modeSelect').value;
+            const algorithm = document.getElementById('algorithmSelect').value;
+
+            const confirmed = confirm(`${selectedCargos.size} kargo ile ${mode} modda dağıtım başlatılacak. Onaylıyor musunuz?`);
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch(`${API_URL}/admin/distribution/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        cargo_ids: Array.from(selectedCargos),
+                        mode: mode,
+                        algorithm: algorithm
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`✅ Dağıtım başarıyla oluşturuldu!\n\n` +
+                        `Senaryo ID: ${data.scenario_id}\n` +
+                        `Götürülen: ${data.delivered_count}\n` +
+                        `Kalan: ${data.remaining_count || 0}\n` +
+                        `Maliyet: ${data.total_cost} TL`);
+
+                    selectedCargos.clear();
+                    loadPendingCargos();
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            } catch (error) {
+                console.error('Distribution error:', error);
+                alert('❌ Dağıtım oluşturma hatası!');
+            }
+        }
+
+        // Auth check
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_URL}/auth/status`, { credentials: 'include' });
+                const data = await response.json();
+
+                if (!data.authenticated || data.user.role !== 'admin') {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                document.getElementById('adminName').textContent = data.user.username;
+            } catch (error) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = 'login.html';
+        });
+
+        checkAuth();
+        loadPendingCargos();
+    </script>
+</body>
+
+</html>
