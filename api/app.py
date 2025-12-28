@@ -41,6 +41,7 @@ from charts import charts_bp
 from user_cargo import user_cargo_bp
 from admin_cargo import admin_cargo_bp
 from admin_distribution import admin_distribution_bp
+from admin_logs import admin_logs_api
 
 # Register blueprints
 app.register_blueprint(api, url_prefix='/api')
@@ -51,6 +52,7 @@ app.register_blueprint(charts_bp, url_prefix='/api')
 app.register_blueprint(user_cargo_bp, url_prefix='/api')
 app.register_blueprint(admin_cargo_bp, url_prefix='/api')
 app.register_blueprint(admin_distribution_bp, url_prefix='/api')
+app.register_blueprint(admin_logs_api, url_prefix='/api')
 
 print("✓ Scenario details API registered")
 print("✓ Charts API registered")

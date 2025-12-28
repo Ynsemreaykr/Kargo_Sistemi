@@ -115,121 +115,148 @@ def create_distribution():
             }), 400
         
         
+        # Get system parameters
+        cur.execute("SELECT cost_per_km FROM system_parameters LIMIT 1")
+        params = cur.fetchone()
+        system_params = {'cost_per_km': params['cost_per_km'] if params else 5.0}
+        
+        # Initialize optimizer
+        from distribution_optimizer import DistributionOptimizer
+        optimizer = DistributionOptimizer(cur, system_params)
+        
+        # Run optimization
+        print(f"\n🚀 Running optimization algorithm...")
+        print(f"   Mode: {mode}")
+        print(f"   Cargos: {len(cargos_data)}")
+        print(f"   Start location: {start_location}\n")
+        
+        result = optimizer.optimize_distribution(
+            cargos=[dict(c) for c in cargos_data],
+            mode=mode,
+            start_location=start_location
+        )
+        
+        if not result['success']:
+            # Optimization failed (e.g., insufficient vehicles in LIMITED mode)
+            print(f"❌ Optimization failed: {result['error']}")
+            
+            conn.rollback()
+            cur.close()
+            release_connection(conn)
+            
+            return jsonify({
+                'success': False,
+                'error': result['error'],
+                'remaining_cargos': len(result.get('remaining_cargos', [])),
+                'total_remaining_weight': result.get('total_remaining_weight', 0)
+            }), 400
+        
+        # Optimization successful - create scenario with actual totals
+        print(f"✅ Optimization successful!")
+        print(f"   Vehicles used: {result['vehicle_count']}")
+        print(f"   Total distance: {result['total_distance']:.2f} km")
+        print(f"   Total cost: {result['total_cost']:.2f} TL\n")
+        
+        total_cost = result['total_cost']
+        total_distance = result['total_distance']
+        delivered_count = result['delivered_count']
+        
         # Create scenario
         cur.execute("""
             INSERT INTO scenarios 
             (created_at, algorithm, mode, scenario_type, total_cost, total_distance, remaining_cargos)
-            VALUES (CURRENT_TIMESTAMP, %s, %s, %s, 0, 0, 0)
+            VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, 0)
             RETURNING id
-        """, (algorithm, mode, mode))  # scenario_type = mode for compatibility
+        """, (algorithm, mode, mode, total_cost, total_distance))
         
         scenario_id = cur.fetchone()['id']
         
-        # Call optimization algorithm
-        # SIMPLIFIED VERSION - İleri de gerçek algoritma çalışacak
-        total_cost = 0
-        total_distance = 0
-        delivered_count = len(cargos_data)
-        remaining_count = 0
-        
-        # Update cargo statuses to in_transit
+        # Update cargo statuses
         cur.execute("""
             UPDATE cargos
             SET status = 'in_transit', updated_at = CURRENT_TIMESTAMP
             WHERE id = ANY(%s)
         """, (cargo_ids,))
         
-        # Create dummy routes (gerçek algoritma için placeholder)
-        # Her kargo delivery için basit route oluştur
-        for cargo in cargos_data:
-            cargo_id = cargo['id']
-            dest_id = cargo['destination_district_id']
-            weight = cargo['weight_kg']
-            quantity = cargo['quantity']
-            user_id_cargo = cargo['user_id']
+        # Create routes from optimization result
+        for route_data in result['routes']:
+            vehicle = route_data['vehicle']
+            cargos_in_route = route_data['cargos']
+            route_order = route_data['route_order']
+            route_distance = route_data['distance']
+            route_cost = route_data['cost']
             
-            # Use the start_location determined above (from user selection or default)
-            route_start = start_location if start_location else 12
+            print(f"\n📍 Creating route:")
+            print(f"   Vehicle: {vehicle['name']} ({vehicle['capacity_kg']} kg)")
+            print(f"   Weight: {route_data['total_weight']:.1f} kg ({route_data['utilization']:.1f}% full)")
+            print(f"   Distance: {route_distance:.2f} km")
+            print(f"   Cost: {route_cost:.2f} TL")
+            print(f"   Stops: {len(route_order)}")
             
-            print(f"📍 Creating route for cargo {cargo_id}: Start={route_start} → Dest={dest_id}")
-            
-            # Get district coordinates for route geometry
+            # Get district details for geometry
             cur.execute("""
-                SELECT id, name, latitude, longitude 
-                FROM districts 
-                WHERE id IN (%s, %s)
+                SELECT id, name, latitude, longitude
+                FROM districts
+                WHERE id = ANY(%s)
                 ORDER BY id
-            """, (route_start, dest_id))
+            """, (route_order,))
             
             districts_list = cur.fetchall()
             
-            # Basit maliyet hesabı
-            estimated_distance = 50.0  # dummy
-            estimated_cost = 250.0  # dummy
-            
-            total_distance += estimated_distance
-            total_cost += estimated_cost
-            
-            # Create route geometry using OSM
+            # Create route geometry
             try:
                 from osm_routing import get_route_geometry_osm
-                
-                # Route order: [start_location, dest_id]
-                route_order = [start_location, dest_id]
                 osm_geometry = get_route_geometry_osm(route_order, districts_list)
-                
-                # OSM returns FeatureCollection, store it
                 route_geometry = osm_geometry
-                print(f"✓ OSM geometry created for route: {districts_list[0]['name']} → {districts_list[-1]['name']}")
-                
             except Exception as e:
-                print(f"⚠️ OSM routing failed, using fallback: {e}")
-                # Fallback: Simple LineString
-                coordinates = []
-                for d in districts_list:
-                    coordinates.append([d['longitude'], d['latitude']])
-                
+                print(f"⚠️ OSM routing failed: {e}")
+                # Fallback geometry
+                coordinates = [[d['longitude'], d['latitude']] for d in districts_list]
                 route_geometry = {
                     "type": "LineString",
                     "coordinates": coordinates
                 }
             
-            # Create route
+            # Determine vehicle_id (use existing or create rental)
+            if vehicle.get('is_rented'):
+                # For rental, we'll use vehicle_id = 1 for now
+                # TODO: Create rental vehicle records
+                vehicle_id = 1
+            else:
+                vehicle_id = vehicle.get('vehicle_id', 1)
+            
+            # Insert route
             cur.execute("""
-                INSERT INTO routes 
+                INSERT INTO routes
                 (scenario_id, vehicle_id, total_distance, route_geometry, created_at)
-                VALUES (%s, 1, %s, %s, CURRENT_TIMESTAMP)
+                VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
                 RETURNING id
-            """, (scenario_id, estimated_distance, json.dumps(route_geometry)))
+            """, (scenario_id, vehicle_id, route_distance, json.dumps(route_geometry)))
             
             route_id = cur.fetchone()['id']
             
-            # Add route details (stops)
-            for idx, d in enumerate(districts_list):
-                cur.execute("""
-                    INSERT INTO route_details
-                    (route_id, cargo_id, district_id, stop_order)
-                    VALUES (%s, %s, %s, %s)
-                """, (route_id, cargo_id if idx > 0 else None, d['id'], idx + 1))
+            # Insert route details (stops)
+            for idx, district_id in enumerate(route_order):
+                # Find cargos for this district
+                cargos_for_district = [c for c in cargos_in_route if c['destination_district_id'] == district_id]
+                
+                if cargos_for_district:
+                    # Insert stop with cargo
+                    for cargo in cargos_for_district:
+                        cur.execute("""
+                            INSERT INTO route_details
+                            (route_id, cargo_id, district_id, stop_order)
+                            VALUES (%s, %s, %s, %s)
+                        """, (route_id, cargo['id'], district_id, idx + 1))
+                else:
+                    # Insert stop without cargo (start/intermediate point)
+                    cur.execute("""
+                        INSERT INTO route_details
+                        (route_id, cargo_id, district_id, stop_order)
+                        VALUES (%s, NULL, %s, %s)
+                    """, (route_id, district_id, idx + 1))
             
-            # Update vehicle's current location to this route's destination
-            # So next route will start from where this one ended
-            cur.execute("""
-                UPDATE vehicles 
-                SET current_location_district_id = %s
-                WHERE id = 1
-            """, (dest_id,))
-            
-            print(f"✅ Updated vehicle 1 location: {route_start} → {dest_id}")
-        
-        # Update scenario totals
-        cur.execute("""
-            UPDATE scenarios
-            SET total_cost = %s,
-                total_distance = %s,
-                remaining_cargos = %s
-            WHERE id = %s
-        """, (total_cost, total_distance, remaining_count, scenario_id))
+            print(f"✅ Route {route_id} created")
         
         conn.commit()
         cur.close()
@@ -241,7 +268,7 @@ def create_distribution():
             'success': True,
             'scenario_id': scenario_id,
             'delivered_count': delivered_count,
-            'remaining_count': remaining_count,
+            'remaining_count': 0,  # All cargos delivered in successful optimization
             'total_cost': round(total_cost, 2),
             'total_distance': round(total_distance, 2),
             'mode': mode

@@ -661,62 +661,149 @@
             <div id="map"></div>
             <div id="routeLegend" class="route-legend" style="display: none;"></div>
         </div>
+
+        <!-- BRANCH MANAGEMENT SECTION -->
+        <div class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0;">📍 Şube Yönetimi</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="toggleBranchList()" class="btn btn-secondary" id="toggleBranchListBtn">
+                        📋 Şube Listesini Göster
+                    </button>
+                    <button onclick="enableAddBranchMode()" class="btn btn-primary" id="addBranchBtn">
+                        ➕ Haritadan Şube Ekle
+                    </button>
+                </div>
+            </div>
+
+            <div id="addBranchInfo"
+                style="display: none; background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; border-left: 4px solid var(--accent-primary);">
+                <p style="margin: 0; color: var(--text-primary);">
+                    📍 Harita üzerinde şube eklemek istediğiniz noktaya tıklayın
+                </p>
+                <button onclick="disableAddBranchMode()" class="btn btn-secondary" style="margin-top: 0.5rem;">
+                    ❌ İptal
+                </button>
+            </div>
+
+            <div id="branchListContainer" style="display: none; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-primary); border-bottom: 2px solid var(--border-color);">
+                            <th style="padding: 1rem; text-align: left; color: var(--text-secondary);">ID</th>
+                            <th style="padding: 1rem; text-align: left; color: var(--text-secondary);">Şube Adı</th>
+                            <th style="padding: 1rem; text-align: left; color: var(--text-secondary);">Koordinatlar</th>
+                            <th style="padding: 1rem; text-align: center; color: var(--text-secondary);">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="branchesTableBody">
+                        <tr>
+                            <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                                Şubeler yükleniyor...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <script>
-        const API_URL = 'http://localhost:5002/api';
-        let selectedCargos = new Set();
-        let allCargos = [];
-        let map = null;
-        let routeLayers = [];
-        let districts = [];
-        let districtMarkers = [];
+    <!-- Add Branch Modal -->
+    <div id="addBranchModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+        <div
+            style="background: var(--bg-secondary); max-width: 500px; width: 90%; border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; border: 1px solid var(--border-color);">
+            <div
+                style="background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); padding: 2rem; color: white;">
+                <h2 style="margin: 0; font-size: 1.75rem; font-weight: 700; color: white;">📍 Yeni Şube Ekle</h2>
+                <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.95rem; color: rgba(255,255,255,0.9);">
+                    Harita üzerinde seçtiğiniz konuma şube ekleyin
+                </p>
+            </div>
 
-        async function loadPendingCargos() {
-            try {
-                const response = await fetch(`${API_URL}/admin/cargos/pending`, {
-                    credentials: 'include'
+            <div style="padding: 2rem; background: var(--bg-secondary);">
+                <div
+                    style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border-left: 4px solid var(--accent-primary);">
+                    <label
+                        style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.75rem; display: block;">
+                        🏢 Şube Adı
+                    </label>
+                    <input type="text" id="branchNameInput" class="form-control" placeholder="Örn: Gebze Şubesi"
+                        style="background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                </div>
+
+                <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                        <strong>Koordinatlar:</strong> <span id="modalCoordinates"></span>
+                    </p>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="confirmAddBranch()" class="btn btn-primary" style="flex: 1;">
+                        💾 Şube Ekle
+                    </button>
+                    <button onclick="closeAddBranchModal()" class="btn btn-secondary" style="flex: 1;">
+                        ❌ İptal
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+            const API_URL = 'http://localhost:5002/api';
+            let selectedCargos = new Set();
+            let allCargos = [];
+            let map = null;
+            let routeLayers = [];
+            let districts = [];
+            let districtMarkers = [];
+
+            async function loadPendingCargos() {
+                try {
+                    const response = await fetch(`${API_URL}/admin/cargos/pending`, {
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        allCargos = data.cargos;
+                        displayUserGroups(allCargos);
+                        updateStats();
+                        populateUserFilter(allCargos);
+                    }
+                } catch (error) {
+                    console.error('Load error:', error);
+                }
+            }
+
+            function displayUserGroups(cargos) {
+                const container = document.getElementById('cargoGroups');
+                const emptyState = document.getElementById('emptyState');
+
+                if (cargos.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+
+                // Group by user
+                const grouped = {};
+                cargos.forEach(cargo => {
+                    if (!grouped[cargo.user_id]) {
+                        grouped[cargo.user_id] = {
+                            user_id: cargo.user_id,
+                            username: cargo.username,
+                            cargos: []
+                        };
+                    }
+                    grouped[cargo.user_id].cargos.push(cargo);
                 });
-                const data = await response.json();
 
-                if (data.success) {
-                    allCargos = data.cargos;
-                    displayUserGroups(allCargos);
-                    updateStats();
-                    populateUserFilter(allCargos);
-                }
-            } catch (error) {
-                console.error('Load error:', error);
-            }
-        }
-
-        function displayUserGroups(cargos) {
-            const container = document.getElementById('cargoGroups');
-            const emptyState = document.getElementById('emptyState');
-
-            if (cargos.length === 0) {
-                container.innerHTML = '';
-                emptyState.style.display = 'block';
-                return;
-            }
-
-            emptyState.style.display = 'none';
-
-            // Group by user
-            const grouped = {};
-            cargos.forEach(cargo => {
-                if (!grouped[cargo.user_id]) {
-                    grouped[cargo.user_id] = {
-                        user_id: cargo.user_id,
-                        username: cargo.username,
-                        cargos: []
-                    };
-                }
-                grouped[cargo.user_id].cargos.push(cargo);
-            });
-
-            // Display
-            container.innerHTML = Object.values(grouped).map(group => `
+                // Display
+                container.innerHTML = Object.values(grouped).map(group => `
                 <div class="user-group">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h3 style="margin: 0;">👤 ${group.username} <span style="opacity: 0.6; font-size: 0.9rem;">(${group.cargos.length} kargo)</span></h3>
@@ -752,322 +839,325 @@
                     </table>
                 </div>
             `).join('');
-        }
-
-        function populateUserFilter(cargos) {
-            const filter = document.getElementById('userFilter');
-            const users = [...new Set(cargos.map(c => JSON.stringify({ id: c.user_id, name: c.username })))].map(JSON.parse);
-            filter.innerHTML = '<option value="">Tüm Kullanıcılar</option>' +
-                users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
-        }
-
-        function filterByUser() {
-            const userId = document.getElementById('userFilter').value;
-            const filtered = userId ? allCargos.filter(c => c.user_id == userId) : allCargos;
-            displayUserGroups(filtered);
-        }
-
-        function toggleCargo(id) {
-            selectedCargos.has(id) ? selectedCargos.delete(id) : selectedCargos.add(id);
-            updateStats();
-        }
-
-        function toggleUserCargos(userId, checked) {
-            allCargos.filter(c => c.user_id === userId).forEach(cargo => {
-                checked ? selectedCargos.add(cargo.id) : selectedCargos.delete(cargo.id);
-            });
-            displayUserGroups(allCargos);
-            updateStats();
-        }
-
-        function approveAllUser(userId) {
-            const userCargos = allCargos.filter(c => c.user_id === userId);
-            userCargos.forEach(c => selectedCargos.add(c.id));
-            displayUserGroups(allCargos);
-            updateStats();
-            alert(`✅ ${userCargos.length} kargo seçildi!`);
-        }
-
-        function approveSingle(id) {
-            selectedCargos.add(id);
-            displayUserGroups(allCargos);
-            updateStats();
-        }
-
-        function updateStats() {
-            const totalWeight = allCargos.reduce((sum, c) => sum + parseFloat(c.weight_kg), 0);
-            const users = new Set(allCargos.map(c => c.user_id));
-
-            document.getElementById('totalCargos').textContent = allCargos.length;
-            document.getElementById('totalWeight').textContent = totalWeight.toFixed(0) + ' kg';
-            document.getElementById('selectedCount').textContent = selectedCargos.size;
-            document.getElementById('activeUsers').textContent = users.size;
-        }
-
-        async function createDistribution() {
-            if (selectedCargos.size === 0) {
-                alert('❌ Lütfen en az bir kargo seçin!');
-                return;
             }
 
-            const mode = document.getElementById('modeSelect').value;
-            const algorithm = document.getElementById('algorithmSelect').value;
-
-            // Collect vehicle start and end locations (single selection for all vehicles)
-            const vehicleStartLocations = {};
-            const vehicleEndLocations = {};
-
-            const startValue = document.getElementById('vehicleStartLocation').value;
-            const endValue = document.getElementById('vehicleEndLocation').value;
-
-            console.log('🔍 Dropdown values:');
-            console.log('  Start value:', startValue);
-            console.log('  End value:', endValue);
-
-            if (startValue) {
-                vehicleStartLocations['all'] = parseInt(startValue);
-                console.log('  ✅ Sending start:', vehicleStartLocations['all']);
-            }
-            if (endValue) {
-                vehicleEndLocations['all'] = parseInt(endValue);
-                console.log('  ✅ Sending end:', vehicleEndLocations['all']);
+            function populateUserFilter(cargos) {
+                const filter = document.getElementById('userFilter');
+                const users = [...new Set(cargos.map(c => JSON.stringify({ id: c.user_id, name: c.username })))].map(JSON.parse);
+                filter.innerHTML = '<option value="">Tüm Kullanıcılar</option>' +
+                    users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
             }
 
-            if (!confirm(`${selectedCargos.size} kargo ile ${mode} modda dağıtım başlatılacak. Onaylıyor musunuz?`)) return;
+            function filterByUser() {
+                const userId = document.getElementById('userFilter').value;
+                const filtered = userId ? allCargos.filter(c => c.user_id == userId) : allCargos;
+                displayUserGroups(filtered);
+            }
 
-            try {
-                const response = await fetch(`${API_URL}/admin/distribution/create`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        cargo_ids: Array.from(selectedCargos),
-                        mode: mode,
-                        algorithm: algorithm,
-                        vehicle_start_locations: vehicleStartLocations,
-                        vehicle_end_locations: vehicleEndLocations
-                    })
+            function toggleCargo(id) {
+                selectedCargos.has(id) ? selectedCargos.delete(id) : selectedCargos.add(id);
+                updateStats();
+            }
+
+            function toggleUserCargos(userId, checked) {
+                allCargos.filter(c => c.user_id === userId).forEach(cargo => {
+                    checked ? selectedCargos.add(cargo.id) : selectedCargos.delete(cargo.id);
                 });
+                displayUserGroups(allCargos);
+                updateStats();
+            }
 
-                const data = await response.json();
+            function approveAllUser(userId) {
+                const userCargos = allCargos.filter(c => c.user_id === userId);
+                userCargos.forEach(c => selectedCargos.add(c.id));
+                displayUserGroups(allCargos);
+                updateStats();
+                alert(`✅ ${userCargos.length} kargo seçildi!`);
+            }
 
-                if (data.success) {
-                    alert(`✅ Dağıtım Başarılı!\n\nSenaryo: #${data.scenario_id}\nTeslim: ${data.delivered_count}\nMaliyet: ${data.total_cost} TL`);
-                    selectedCargos.clear();
-                    refresh();
+            function approveSingle(id) {
+                selectedCargos.add(id);
+                displayUserGroups(allCargos);
+                updateStats();
+            }
 
-                    // Show routes on map
-                    displayRoutes(data.scenario_id);
-                } else {
-                    alert('❌ ' + data.error);
+            function updateStats() {
+                const totalWeight = allCargos.reduce((sum, c) => sum + parseFloat(c.weight_kg), 0);
+                const users = new Set(allCargos.map(c => c.user_id));
+
+                document.getElementById('totalCargos').textContent = allCargos.length;
+                document.getElementById('totalWeight').textContent = totalWeight.toFixed(0) + ' kg';
+                document.getElementById('selectedCount').textContent = selectedCargos.size;
+                document.getElementById('activeUsers').textContent = users.size;
+            }
+
+            async function createDistribution() {
+                if (selectedCargos.size === 0) {
+                    alert('❌ Lütfen en az bir kargo seçin!');
+                    return;
                 }
-            } catch (error) {
-                console.error('Distribution error:', error);
-                alert('❌ Hata oluştu!');
-            }
-        }
 
-        async function displayRoutes(scenarioId) {
-            try {
-                console.log('Fetching routes for scenario:', scenarioId);
-                const response = await fetch(`${API_URL}/routes/${scenarioId}`, {
-                    credentials: 'include'
-                });
-                const data = await response.json();
+                const mode = document.getElementById('modeSelect').value;
+                const algorithm = document.getElementById('algorithmSelect').value;
 
-                console.log('Routes data:', data);
+                // Collect vehicle start and end locations (single selection for all vehicles)
+                const vehicleStartLocations = {};
+                const vehicleEndLocations = {};
 
-                if (data.success && data.data && data.data.length > 0) {
-                    initMap(); // Ensure map is initialized before drawing
-                    drawRoutes(data.data);
-                    document.getElementById('routeLegend').style.display = 'block';
-                } else {
-                    console.warn('No routes found or empty data');
-                    alert('⚠️ Rota verisi bulunamadı');
+                const startValue = document.getElementById('vehicleStartLocation').value;
+                const endValue = document.getElementById('vehicleEndLocation').value;
+
+                console.log('🔍 Dropdown values:');
+                console.log('  Start value:', startValue);
+                console.log('  End value:', endValue);
+
+                if (startValue) {
+                    vehicleStartLocations['all'] = parseInt(startValue);
+                    console.log('  ✅ Sending start:', vehicleStartLocations['all']);
                 }
-            } catch (error) {
-                console.error('Route display error:', error);
-                alert('❌ Rota gösterim hatası: ' + error.message);
+                if (endValue) {
+                    vehicleEndLocations['all'] = parseInt(endValue);
+                    console.log('  ✅ Sending end:', vehicleEndLocations['all']);
+                }
+
+                if (!confirm(`${selectedCargos.size} kargo ile ${mode} modda dağıtım başlatılacak. Onaylıyor musunuz?`)) return;
+
+                try {
+                    const response = await fetch(`${API_URL}/admin/distribution/create`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            cargo_ids: Array.from(selectedCargos),
+                            mode: mode,
+                            algorithm: algorithm,
+                            vehicle_start_locations: vehicleStartLocations,
+                            vehicle_end_locations: vehicleEndLocations
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert(`✅ Dağıtım Başarılı!\n\nSenaryo: #${data.scenario_id}\nTeslim: ${data.delivered_count}\nMaliyet: ${data.total_cost} TL`);
+                        selectedCargos.clear();
+                        refresh();
+
+                        // Show routes on map
+                        displayRoutes(data.scenario_id);
+                    } else {
+                        alert('❌ ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Distribution error:', error);
+                    alert('❌ Hata oluştu!');
+                }
             }
-        }
 
-        // Load districts - COPIED FROM USER_DASHBOARD.HTML (WORKING VERSION)
-        async function loadDistricts() {
-            try {
-                const response = await fetch(`${API_URL}/districts`, {
-                    credentials: 'include'
-                });
-                const data = await response.json();
+            async function displayRoutes(scenarioId) {
+                try {
+                    console.log('Fetching routes for scenario:', scenarioId);
+                    const response = await fetch(`${API_URL}/routes/${scenarioId}`, {
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
 
-                console.log('Districts loaded:', data);
+                    console.log('Routes data:', data);
 
-                // Populate vehicle location dropdowns
+                    if (data.success && data.data && data.data.length > 0) {
+                        initMap(); // Ensure map is initialized before drawing
+                        drawRoutes(data.data);
+                        document.getElementById('routeLegend').style.display = 'block';
+                    } else {
+                        console.warn('No routes found or empty data');
+                        alert('⚠️ Rota verisi bulunamadı');
+                    }
+                } catch (error) {
+                    console.error('Route display error:', error);
+                    alert('❌ Rota gösterim hatası: ' + error.message);
+                }
+            }
+
+            // Load districts - COPIED FROM USER_DASHBOARD.HTML (WORKING VERSION)
+            async function loadDistricts() {
+                try {
+                    const response = await fetch(`${API_URL}/districts`, {
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+
+                    console.log('Districts loaded:', data);
+
+                    // Populate vehicle location dropdowns
+                    const startSelect = document.getElementById('vehicleStartLocation');
+                    const endSelect = document.getElementById('vehicleEndLocation');
+
+                    if (startSelect && endSelect && data.data) {
+                        // Add "Otomatik" option first (will be selected by default)
+                        const defaultStart = document.createElement('option');
+                        defaultStart.value = '';
+                        defaultStart.textContent = 'Otomatik (Son Konum)';
+                        startSelect.appendChild(defaultStart);
+
+                        const defaultEnd = document.createElement('option');
+                        defaultEnd.value = '';
+                        defaultEnd.textContent = 'Otomatik (Başladığı Yer)';
+                        endSelect.appendChild(defaultEnd);
+
+                        // Now add all districts
+                        data.data.forEach(district => {
+                            console.log(`Adding district: ID=${district.id}, Name=${district.name}`);
+
+                            const startOption = document.createElement('option');
+                            startOption.value = district.id;
+                            startOption.textContent = district.name;
+                            startSelect.appendChild(startOption);
+
+                            const endOption = document.createElement('option');
+                            endOption.value = district.id;
+                            endOption.textContent = district.name;
+                            endSelect.appendChild(endOption);
+                        });
+                        console.log(`✅ ${data.data.length} districts loaded to dropdowns`);
+                    }
+
+
+                    // Keep for map markers
+                    districts = data.data || [];
+                } catch (error) {
+                    console.error('District load error:', error);
+                }
+            }
+
+            // Populate vehicle location dropdowns
+            function populateVehicleDropdowns(districtList) {
+                console.log('populateVehicleDropdowns called with:', districtList);
+
                 const startSelect = document.getElementById('vehicleStartLocation');
                 const endSelect = document.getElementById('vehicleEndLocation');
 
-                if (startSelect && endSelect && data.data) {
-                    // Add "Otomatik" option first (will be selected by default)
-                    const defaultStart = document.createElement('option');
-                    defaultStart.value = '';
-                    defaultStart.textContent = 'Otomatik (Son Konum)';
-                    startSelect.appendChild(defaultStart);
+                console.log('Start select element:', startSelect);
+                console.log('End select element:', endSelect);
 
-                    const defaultEnd = document.createElement('option');
-                    defaultEnd.value = '';
-                    defaultEnd.textContent = 'Otomatik (Başladığı Yer)';
-                    endSelect.appendChild(defaultEnd);
-
-                    // Now add all districts
-                    data.data.forEach(district => {
-                        console.log(`Adding district: ID=${district.id}, Name=${district.name}`);
-
-                        const startOption = document.createElement('option');
-                        startOption.value = district.id;
-                        startOption.textContent = district.name;
-                        startSelect.appendChild(startOption);
-
-                        const endOption = document.createElement('option');
-                        endOption.value = district.id;
-                        endOption.textContent = district.name;
-                        endSelect.appendChild(endOption);
-                    });
-                    console.log(`✅ ${data.data.length} districts loaded to dropdowns`);
+                if (!startSelect || !endSelect) {
+                    console.error('❌ Dropdown elements not found!');
+                    console.error('vehicleStartLocation exists:', !!startSelect);
+                    console.error('vehicleEndLocation exists:', !!endSelect);
+                    return;
                 }
 
+                if (!districtList || districtList.length === 0) {
+                    console.error('❌ No districts to populate!');
+                    return;
+                }
 
-                // Keep for map markers
-                districts = data.data || [];
-            } catch (error) {
-                console.error('District load error:', error);
-            }
-        }
+                // Add districts to dropdowns
+                districtList.forEach(district => {
+                    const startOption = document.createElement('option');
+                    startOption.value = district.id;
+                    startOption.textContent = district.name;
+                    startSelect.appendChild(startOption);
 
-        // Populate vehicle location dropdowns
-        function populateVehicleDropdowns(districtList) {
-            console.log('populateVehicleDropdowns called with:', districtList);
+                    const endOption = document.createElement('option');
+                    endOption.value = district.id;
+                    endOption.textContent = district.name;
+                    endSelect.appendChild(endOption);
+                });
 
-            const startSelect = document.getElementById('vehicleStartLocation');
-            const endSelect = document.getElementById('vehicleEndLocation');
-
-            console.log('Start select element:', startSelect);
-            console.log('End select element:', endSelect);
-
-            if (!startSelect || !endSelect) {
-                console.error('❌ Dropdown elements not found!');
-                console.error('vehicleStartLocation exists:', !!startSelect);
-                console.error('vehicleEndLocation exists:', !!endSelect);
-                return;
+                console.log(`✅ ${districtList.length} districts loaded into vehicle location dropdowns`);
+                console.log('Start select now has', startSelect.options.length, 'options');
+                console.log('End select now has', endSelect.options.length, 'options');
             }
 
-            if (!districtList || districtList.length === 0) {
-                console.error('❌ No districts to populate!');
-                return;
-            }
+            function addDistrictMarkers() {
+                // Clear existing markers
+                districtMarkers.forEach(m => map.removeLayer(m));
+                districtMarkers = [];
 
-            // Add districts to dropdowns
-            districtList.forEach(district => {
-                const startOption = document.createElement('option');
-                startOption.value = district.id;
-                startOption.textContent = district.name;
-                startSelect.appendChild(startOption);
+                districts.forEach(district => {
+                    const marker = L.circleMarker([district.latitude, district.longitude], {
+                        radius: 8,
+                        fillColor: '#6366f1',
+                        color: '#fff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(map);
 
-                const endOption = document.createElement('option');
-                endOption.value = district.id;
-                endOption.textContent = district.name;
-                endSelect.appendChild(endOption);
-            });
-
-            console.log(`✅ ${districtList.length} districts loaded into vehicle location dropdowns`);
-            console.log('Start select now has', startSelect.options.length, 'options');
-            console.log('End select now has', endSelect.options.length, 'options');
-        }
-
-        function addDistrictMarkers() {
-            // Clear existing markers
-            districtMarkers.forEach(m => map.removeLayer(m));
-            districtMarkers = [];
-
-            districts.forEach(district => {
-                const marker = L.circleMarker([district.latitude, district.longitude], {
-                    radius: 8,
-                    fillColor: '#6366f1',
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                }).addTo(map);
-
-                marker.bindPopup(`
+                    marker.bindPopup(`
                     <div style="text-align: center;">
                         <strong style="font-size: 14px;">${district.name}</strong><br>
                         <small style="color: #666;">İlçe Merkezi</small>
                     </div>
                 `);
 
-                districtMarkers.push(marker);
-            });
-        }
-
-        function initMap() {
-            if (map) {
-                return; // Already initialized
+                    districtMarkers.push(marker);
+                });
             }
 
-            console.log('Initializing map...');
-            map = L.map('map').setView([40.7654, 29.9407], 10); // Kocaeli center
+            function initMap() {
+                if (map) {
+                    return; // Already initialized
+                }
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+                console.log('Initializing map...');
+                map = L.map('map').setView([40.7654, 29.9407], 10); // Kocaeli center
 
-            console.log('Map initialized');
-        }
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
 
-        function drawRoutes(routes) {
-            console.log('Drawing routes:', routes.length);
+                // Add click event for adding branches
+                map.on('click', handleMapClick);
 
-            // Clear existing routes
-            routeLayers.forEach(layer => map.removeLayer(layer));
-            routeLayers = [];
+                console.log('Map initialized');
+            }
 
-            const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
-            const legend = document.getElementById('routeLegend');
-            legend.innerHTML = '<h3 style="margin-bottom: 1rem;">Rotalar:</h3>';
+            function drawRoutes(routes) {
+                console.log('Drawing routes:', routes.length);
 
-            routes.forEach((route, index) => {
-                const color = colors[index % colors.length];
+                // Clear existing routes
+                routeLayers.forEach(layer => map.removeLayer(layer));
+                routeLayers = [];
 
-                console.log('Route', index, ':', route);
+                const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+                const legend = document.getElementById('routeLegend');
+                legend.innerHTML = '<h3 style="margin-bottom: 1rem;">Rotalar:</h3>';
 
-                try {
-                    // Parse route_geometry from backend
-                    let routeGeometry;
-                    if (typeof route.route_geometry === 'string') {
-                        routeGeometry = JSON.parse(route.route_geometry.replace(/'/g, '"'));
-                    } else {
-                        routeGeometry = route.route_geometry;
-                    }
+                routes.forEach((route, index) => {
+                    const color = colors[index % colors.length];
 
-                    // Check if we have OSM FeatureCollection
-                    if (routeGeometry && routeGeometry.type === 'FeatureCollection' && routeGeometry.features) {
-                        console.log(`✓ Rota ${index + 1}: OSM FeatureCollection ile çiziliyor (${routeGeometry.features.length} segment)`);
+                    console.log('Route', index, ':', route);
 
-                        let stopNumber = 1;
+                    try {
+                        // Parse route_geometry from backend
+                        let routeGeometry;
+                        if (typeof route.route_geometry === 'string') {
+                            routeGeometry = JSON.parse(route.route_geometry.replace(/'/g, '"'));
+                        } else {
+                            routeGeometry = route.route_geometry;
+                        }
 
-                        // Draw each feature's geometry
-                        routeGeometry.features.forEach((feature, segmentIndex) => {
-                            if (feature.geometry && feature.geometry.type === 'LineString') {
-                                // OSM coordinates are [lon, lat], Leaflet needs [lat, lon]
-                                const latlngs = feature.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                        // Check if we have OSM FeatureCollection
+                        if (routeGeometry && routeGeometry.type === 'FeatureCollection' && routeGeometry.features) {
+                            console.log(`✓ Rota ${index + 1}: OSM FeatureCollection ile çiziliyor (${routeGeometry.features.length} segment)`);
 
-                                const polyline = L.polyline(latlngs, {
-                                    color: color,
-                                    weight: 4,
-                                    opacity: 0.8,
-                                    smoothFactor: 1
-                                }).addTo(map);
+                            let stopNumber = 1;
 
-                                polyline.bindPopup(`
+                            // Draw each feature's geometry
+                            routeGeometry.features.forEach((feature, segmentIndex) => {
+                                if (feature.geometry && feature.geometry.type === 'LineString') {
+                                    // OSM coordinates are [lon, lat], Leaflet needs [lat, lon]
+                                    const latlngs = feature.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+
+                                    const polyline = L.polyline(latlngs, {
+                                        color: color,
+                                        weight: 4,
+                                        opacity: 0.8,
+                                        smoothFactor: 1
+                                    }).addTo(map);
+
+                                    polyline.bindPopup(`
                                     <div style="min-width: 200px;">
                                         <strong style="font-size: 14px;">🚚 Rota ${index + 1} - Segment ${segmentIndex + 1}</strong><br>
                                         <hr style="margin: 8px 0; border-color: #ddd;">
@@ -1078,32 +1168,12 @@
                                     </div>
                                 `);
 
-                                routeLayers.push(polyline);
+                                    routeLayers.push(polyline);
 
-                                // Add numbered markers for start and end of each segment
-                                if (latlngs.length > 0) {
-                                    // Start marker
-                                    const startMarker = L.circleMarker(latlngs[0], {
-                                        radius: 6,
-                                        fillColor: color,
-                                        color: '#fff',
-                                        weight: 2,
-                                        opacity: 1,
-                                        fillOpacity: 0.9
-                                    }).addTo(map);
-
-                                    startMarker.bindTooltip(`${stopNumber}`, {
-                                        permanent: false,
-                                        direction: 'center',
-                                        className: 'route-number-tooltip'
-                                    });
-
-                                    routeLayers.push(startMarker);
-
-                                    // End marker (only if last segment)
-                                    if (segmentIndex === routeGeometry.features.length - 1) {
-                                        stopNumber++;
-                                        const endMarker = L.circleMarker(latlngs[latlngs.length - 1], {
+                                    // Add numbered markers for start and end of each segment
+                                    if (latlngs.length > 0) {
+                                        // Start marker
+                                        const startMarker = L.circleMarker(latlngs[0], {
                                             radius: 6,
                                             fillColor: color,
                                             color: '#fff',
@@ -1112,38 +1182,58 @@
                                             fillOpacity: 0.9
                                         }).addTo(map);
 
-                                        endMarker.bindTooltip(`${stopNumber}`, {
+                                        startMarker.bindTooltip(`${stopNumber}`, {
                                             permanent: false,
                                             direction: 'center',
                                             className: 'route-number-tooltip'
                                         });
 
-                                        routeLayers.push(endMarker);
+                                        routeLayers.push(startMarker);
+
+                                        // End marker (only if last segment)
+                                        if (segmentIndex === routeGeometry.features.length - 1) {
+                                            stopNumber++;
+                                            const endMarker = L.circleMarker(latlngs[latlngs.length - 1], {
+                                                radius: 6,
+                                                fillColor: color,
+                                                color: '#fff',
+                                                weight: 2,
+                                                opacity: 1,
+                                                fillOpacity: 0.9
+                                            }).addTo(map);
+
+                                            endMarker.bindTooltip(`${stopNumber}`, {
+                                                permanent: false,
+                                                direction: 'center',
+                                                className: 'route-number-tooltip'
+                                            });
+
+                                            routeLayers.push(endMarker);
+                                        }
+
+                                        stopNumber++;
                                     }
 
-                                    stopNumber++;
+                                    // Fit bounds to first segment
+                                    if (index === 0 && segmentIndex === 0) {
+                                        map.fitBounds(polyline.getBounds().pad(0.1));
+                                    }
                                 }
+                            });
+                        } else if (routeGeometry && routeGeometry.type === 'LineString' && routeGeometry.coordinates) {
+                            console.log(`✓ Rota ${index + 1}: LineString geometrisi ile çiziliyor`);
 
-                                // Fit bounds to first segment
-                                if (index === 0 && segmentIndex === 0) {
-                                    map.fitBounds(polyline.getBounds().pad(0.1));
-                                }
-                            }
-                        });
-                    } else if (routeGeometry && routeGeometry.type === 'LineString' && routeGeometry.coordinates) {
-                        console.log(`✓ Rota ${index + 1}: LineString geometrisi ile çiziliyor`);
+                            // OSM coordinates are [lon, lat], Leaflet needs [lat, lon]
+                            const latlngs = routeGeometry.coordinates.map(coord => [coord[1], coord[0]]);
 
-                        // OSM coordinates are [lon, lat], Leaflet needs [lat, lon]
-                        const latlngs = routeGeometry.coordinates.map(coord => [coord[1], coord[0]]);
+                            const polyline = L.polyline(latlngs, {
+                                color: color,
+                                weight: 4,
+                                opacity: 0.8,
+                                smoothFactor: 1
+                            }).addTo(map);
 
-                        const polyline = L.polyline(latlngs, {
-                            color: color,
-                            weight: 4,
-                            opacity: 0.8,
-                            smoothFactor: 1
-                        }).addTo(map);
-
-                        polyline.bindPopup(`
+                            polyline.bindPopup(`
                             <div style="min-width: 200px;">
                                 <strong style="font-size: 14px;">🚚 Rota ${index + 1}</strong><br>
                                 <hr style="margin: 8px 0; border-color: #ddd;">
@@ -1152,25 +1242,25 @@
                             </div>
                         `);
 
-                        routeLayers.push(polyline);
+                            routeLayers.push(polyline);
 
-                        // Fit bounds to first route
-                        if (index === 0) {
-                            map.fitBounds(polyline.getBounds().pad(0.1));
-                        }
-                    } else if (route.stops && route.stops.length > 0) {
-                        // Fallback: Use stops to draw straight line
-                        console.log(`⚠️  Rota ${index + 1}: Stops ile düz çizgi çiziliyor`);
-                        const coordinates = route.stops.map(stop => [stop.latitude, stop.longitude]);
+                            // Fit bounds to first route
+                            if (index === 0) {
+                                map.fitBounds(polyline.getBounds().pad(0.1));
+                            }
+                        } else if (route.stops && route.stops.length > 0) {
+                            // Fallback: Use stops to draw straight line
+                            console.log(`⚠️  Rota ${index + 1}: Stops ile düz çizgi çiziliyor`);
+                            const coordinates = route.stops.map(stop => [stop.latitude, stop.longitude]);
 
-                        const polyline = L.polyline(coordinates, {
-                            color: color,
-                            weight: 4,
-                            opacity: 0.8,
-                            dashArray: '10, 5'  // Dashed to indicate fallback
-                        }).addTo(map);
+                            const polyline = L.polyline(coordinates, {
+                                color: color,
+                                weight: 4,
+                                opacity: 0.8,
+                                dashArray: '10, 5'  // Dashed to indicate fallback
+                            }).addTo(map);
 
-                        polyline.bindPopup(`
+                            polyline.bindPopup(`
                             <div style="min-width: 200px;">
                                 <strong style="font-size: 14px;">🚚 Rota ${index + 1}</strong><br>
                                 <hr style="margin: 8px 0; border-color: #ddd;">
@@ -1180,208 +1270,650 @@
                             </div>
                         `);
 
-                        routeLayers.push(polyline);
+                            routeLayers.push(polyline);
 
-                        // Add markers for stops
-                        route.stops.forEach((stop, stopIndex) => {
-                            const marker = L.circleMarker([stop.latitude, stop.longitude], {
-                                radius: 6,
-                                fillColor: color,
-                                color: '#fff',
-                                weight: 2,
-                                opacity: 1,
-                                fillOpacity: 0.9
-                            }).addTo(map);
+                            // Add markers for stops
+                            route.stops.forEach((stop, stopIndex) => {
+                                const marker = L.circleMarker([stop.latitude, stop.longitude], {
+                                    radius: 6,
+                                    fillColor: color,
+                                    color: '#fff',
+                                    weight: 2,
+                                    opacity: 1,
+                                    fillOpacity: 0.9
+                                }).addTo(map);
 
-                            marker.bindTooltip(`${stopIndex + 1}`, {
-                                permanent: false,
-                                direction: 'center',
-                                className: 'route-number-tooltip'
+                                marker.bindTooltip(`${stopIndex + 1}`, {
+                                    permanent: false,
+                                    direction: 'center',
+                                    className: 'route-number-tooltip'
+                                });
+
+                                routeLayers.push(marker);
                             });
 
-                            routeLayers.push(marker);
-                        });
-
-                        if (index === 0) {
-                            map.fitBounds(polyline.getBounds().pad(0.1));
+                            if (index === 0) {
+                                map.fitBounds(polyline.getBounds().pad(0.1));
+                            }
+                        } else {
+                            console.warn('Route', index, 'has no geometry or stops');
                         }
-                    } else {
-                        console.warn('Route', index, 'has no geometry or stops');
-                    }
 
-                    // Legend
-                    legend.innerHTML += `
+                        // Legend
+                        legend.innerHTML += `
                         <div class="route-item">
                             <div class="route-color" style="background: ${color};"></div>
                             <span>Araç ${route.vehicle_id} - ${route.vehicle_type_name} (${parseFloat(route.distance || 0).toFixed(1)} km)</span>
                         </div>
                     `;
-                } catch (error) {
-                    console.error('Route', index, 'draw error:', error);
-                }
-            });
+                    } catch (error) {
+                        console.error('Route', index, 'draw error:', error);
+                    }
+                });
 
-            console.log('Routes drawn successfully');
-        }
-
-        function closeMap() {
-            // Clear routes but keep map
-            routeLayers.forEach(layer => map.removeLayer(layer));
-            routeLayers = [];
-            document.getElementById('routeLegend').style.display = 'none';
-            document.getElementById('routeLegend').innerHTML = '';
-        }
-
-        // Vehicle Location Management
-        async function loadVehicleLocations() {
-            try {
-                // Load districts for dropdown
-                const districtResponse = await fetch(`${API_URL}/districts`, { credentials: 'include' });
-                const districtData = await districtResponse.json();
-
-                if (!districtData.success) return;
-
-                const districtsMap = districtData.data;
-
-                // Create vehicle location selectors (3 vehicles)
-                const container = document.getElementById('vehicleLocations');
-                container.innerHTML = '';
-
-                for (let i = 1; i <= 3; i++) {
-                    const select = document.createElement('select');
-                    select.id = `vehicle${i}Location`;
-                    select.className = 'form-control';
-                    select.style.fontSize = '0.9rem';
-
-                    // Default option
-                    const defaultOption = document.createElement('option');
-                    defaultOption.value = '';
-                    defaultOption.textContent = `Araç ${i} - Otomatik (Son Konum)`;
-                    select.appendChild(defaultOption);
-
-                    // District options
-                    districtsMap.forEach(district => {
-                        const option = document.createElement('option');
-                        option.value = district.id;
-                        option.textContent = district.name;
-                        select.appendChild(option);
-                    });
-
-                    container.appendChild(select);
-                }
-
-                console.log('✓ Vehicle location selectors loaded');
-            } catch (error) {
-                console.error('Vehicle location load error:', error);
+                console.log('Routes drawn successfully');
             }
-        }
 
-        function refresh() {
-            loadPendingCargos();
-        }
+            function closeMap() {
+                // Clear routes but keep map
+                routeLayers.forEach(layer => map.removeLayer(layer));
+                routeLayers = [];
+                document.getElementById('routeLegend').style.display = 'none';
+                document.getElementById('routeLegend').innerHTML = '';
+            }
 
-        // System Settings Functions
-        async function showSettings() {
-            try {
-                const response = await fetch(`${API_URL}/system-parameters`, { credentials: 'include' });
-                const data = await response.json();
+            // Vehicle Location Management
+            async function loadVehicleLocations() {
+                try {
+                    // Load districts for dropdown
+                    const districtResponse = await fetch(`${API_URL}/districts`, { credentials: 'include' });
+                    const districtData = await districtResponse.json();
 
-                if (data.success) {
-                    document.getElementById('costPerKm').value = data.data.cost_per_km;
+                    if (!districtData.success) return;
 
-                    const vehicleCostsDiv = document.getElementById('vehicleCosts');
-                    vehicleCostsDiv.innerHTML = '';
+                    const districtsMap = districtData.data;
 
-                    data.data.vehicle_types.forEach(vt => {
-                        vehicleCostsDiv.innerHTML += `
+                    // Create vehicle location selectors (3 vehicles)
+                    const container = document.getElementById('vehicleLocations');
+                    container.innerHTML = '';
+
+                    for (let i = 1; i <= 3; i++) {
+                        const select = document.createElement('select');
+                        select.id = `vehicle${i}Location`;
+                        select.className = 'form-control';
+                        select.style.fontSize = '0.9rem';
+
+                        // Default option
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = `Araç ${i} - Otomatik (Son Konum)`;
+                        select.appendChild(defaultOption);
+
+                        // District options
+                        districtsMap.forEach(district => {
+                            const option = document.createElement('option');
+                            option.value = district.id;
+                            option.textContent = district.name;
+                            select.appendChild(option);
+                        });
+
+                        container.appendChild(select);
+                    }
+
+                    console.log('✓ Vehicle location selectors loaded');
+                } catch (error) {
+                    console.error('Vehicle location load error:', error);
+                }
+            }
+
+            function refresh() {
+                loadPendingCargos();
+            }
+
+            // System Settings Functions
+            async function showSettings() {
+                try {
+                    const response = await fetch(`${API_URL}/system-parameters`, { credentials: 'include' });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        document.getElementById('costPerKm').value = data.data.cost_per_km;
+
+                        const vehicleCostsDiv = document.getElementById('vehicleCosts');
+                        vehicleCostsDiv.innerHTML = '';
+
+                        data.data.vehicle_types.forEach(vt => {
+                            vehicleCostsDiv.innerHTML += `
                             <div style="margin-bottom: 1rem;">
                                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">${vt.name} (${vt.capacity_kg} kg)</label>
                                 <input type="number" id="vehicle_${vt.id}" step="1" class="form-control" value="${vt.rental_cost}" placeholder="Kiralama ücreti">
                             </div>
                         `;
+                        });
+
+                        document.getElementById('settingsModal').style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Settings load error:', error);
+                    alert('Ayarlar yüklenemedi!');
+                }
+            }
+
+            async function saveSettings() {
+                try {
+                    const costPerKm = document.getElementById('costPerKm').value;
+                    const vehicleCosts = {};
+
+                    document.querySelectorAll('[id^="vehicle_"]').forEach(input => {
+                        const vehicleId = input.id.replace('vehicle_', '');
+                        vehicleCosts[vehicleId] = parseFloat(input.value);
                     });
 
-                    document.getElementById('settingsModal').style.display = 'block';
+                    const response = await fetch(`${API_URL}/system-parameters`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            cost_per_km: parseFloat(costPerKm),
+                            vehicle_costs: vehicleCosts
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('✅ Ayarlar kaydedildi!');
+                        closeSettings();
+                    } else {
+                        alert('❌ ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Save error:', error);
+                    alert('❌ Kaydetme hatası!');
+                }
+            }
+
+            function closeSettings() {
+                document.getElementById('settingsModal').style.display = 'none';
+            }
+
+            // Auth
+            async function checkAuth() {
+                try {
+                    const response = await fetch(`${API_URL}/auth/status`, { credentials: 'include' });
+                    const data = await response.json();
+
+                    if (!data.authenticated || !data.user || data.user.role !== 'admin') {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+
+                    document.getElementById('adminName').textContent = data.user.username;
+                } catch (error) {
+                    console.error('Auth error:', error);
+                    window.location.href = 'login.html';
+                }
+            }
+
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+                window.location.href = 'login.html';
+            });
+
+            // Initialize
+            checkAuth();
+            loadPendingCargos();
+
+            // Initialize map on page load
+            setTimeout(() => {
+                initMap();
+                loadDistricts(); // Load and display district markers
+            }, 500);
+
+            setInterval(refresh, 30000); // Auto-refresh every 30s
+        </script>
+    </div>
+
+    <!-- Logs & Reports Section -->
+    <div class="logs-section"
+        style="margin-top: 3rem; padding: 2rem; background: var(--bg-secondary); border-radius: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="margin: 0; color: var(--text-primary);">📊 Loglar & Raporlar</h2>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button onclick="loadLogs()" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+                    🔄 Yenile
+                </button>
+                <select id="userFilterLogs" onchange="loadLogs()"
+                    style="padding: 0.5rem 1rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px;">
+                    <option value="">Tüm Kullanıcılar</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: var(--bg-primary); border-bottom: 2px solid var(--border-color);">
+                        <th style="padding: 1rem; text-align: left; color: var(--text-secondary);">Tarih</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--text-secondary);">Kullanıcı</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--text-secondary);">Mod</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--text-secondary);">Algoritma</th>
+                        <th style="padding: 1rem; text-align: center; color: var(--text-secondary);">Kargo</th>
+                        <th style="padding: 1rem; text-align: right; color: var(--text-secondary);">Mesafe (km)</th>
+                        <th style="padding: 1rem; text-align: right; color: var(--text-secondary);">Maliyet (TL)</th>
+                        <th style="padding: 1rem; text-align: center; color: var(--text-secondary);"></th>
+                    </tr>
+                </thead>
+                <tbody id="logsTableBody">
+                    <tr>
+                        <td colspan="8" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                            Loglar yükleniyor...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Log Detail Modal -->
+    <div id="logDetailModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; overflow-y: auto;">
+        <div
+            style="max-width: 900px; margin: 2rem auto; background: var(--bg-secondary); border-radius: 12px; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; color: var(--text-primary);" id="modalTitle">Scenario Detayları</h2>
+                <button onclick="closeLogDetail()"
+                    style="background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer;">×</button>
+            </div>
+            <div id="logDetailContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Logs & Reports Functions
+        let allLogs = [];
+
+        async function loadLogs() {
+            try {
+                const userFilter = document.getElementById('userFilterLogs').value;
+                const url = `${API_URL}/admin/logs`;
+
+                const response = await fetch(url, {
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    allLogs = data.data;
+                    displayLogs(allLogs);
+                    populateUserFilter(allLogs);
+                } else {
+                    console.error('Failed to load logs:', data.error);
                 }
             } catch (error) {
-                console.error('Settings load error:', error);
-                alert('Ayarlar yüklenemedi!');
+                console.error('Error loading logs:', error);
             }
         }
 
-        async function saveSettings() {
-            try {
-                const costPerKm = document.getElementById('costPerKm').value;
-                const vehicleCosts = {};
+        function populateUserFilter(logs) {
+            const filter = document.getElementById('userFilterLogs');
+            const users = new Map();
 
-                document.querySelectorAll('[id^="vehicle_"]').forEach(input => {
-                    const vehicleId = input.id.replace('vehicle_', '');
-                    vehicleCosts[vehicleId] = parseFloat(input.value);
+            logs.forEach(log => {
+                if (log.user && log.user.username) {
+                    users.set(log.user.username, log.user);
+                }
+            });
+
+            // Keep "Tüm Kullanıcılar" option
+            filter.innerHTML = '<option value="">Tüm Kullanıcılar</option>';
+
+            users.forEach((user, username) => {
+                const option = document.createElement('option');
+                option.value = username;
+                option.textContent = username;
+                filter.appendChild(option);
+            });
+        }
+
+        function displayLogs(logs) {
+            const tbody = document.getElementById('logsTableBody');
+
+            if (logs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                            Henüz log kaydı yok
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const userFilter = document.getElementById('userFilterLogs').value;
+            const filteredLogs = userFilter
+                ? logs.filter(log => log.user && log.user.username === userFilter)
+                : logs;
+
+            tbody.innerHTML = filteredLogs.map(log => {
+                const date = new Date(log.created_at);
+                const dateStr = date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;"
+                        onmouseover="this.style.background='var(--bg-primary)'"
+                        onmouseout="this.style.background='transparent'"
+                        onclick="showLogDetail(${log.scenario_id})">
+                        <td style="padding: 1rem; color: var(--text-primary);">${dateStr}</td>
+                        <td style="padding: 1rem; color: var(--text-primary);">${log.user?.username || 'N/A'}</td>
+                        <td style="padding: 1rem;">
+                            <span style="padding: 0.25rem 0.75rem; background: ${getModeColor(log.mode)}; color: white; border-radius: 4px; font-size: 0.85rem;">
+                                ${log.mode}
+                            </span>
+                        </td>
+                        <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.9rem;">${log.algorithm || 'N/A'}</td>
+                        <td style="padding: 1rem; text-align: center; color: var(--text-primary);">${log.cargo_count}</td>
+                        <td style="padding: 1rem; text-align: right; color: var(--text-primary);">${log.total_distance.toFixed(1)}</td>
+                        <td style="padding: 1rem; text-align: right; color: var(--accent-green); font-weight: 600;">${log.total_cost.toFixed(2)}</td>
+                        <td style="padding: 1rem; text-align: center;">
+                            <span style="color: var(--text-secondary);">▶</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getModeColor(mode) {
+            switch (mode) {
+                case 'LIMITED': return '#3b82f6';
+                case 'UNLIMITED': return '#10b981';
+                case 'RENTAL': return '#f59e0b';
+                default: return '#6b7280';
+            }
+        }
+
+        async function showLogDetail(scenarioId) {
+            try {
+                const response = await fetch(`${API_URL}/admin/logs/${scenarioId}`, {
+                    credentials: 'include'
                 });
 
-                const response = await fetch(`${API_URL}/system-parameters`, {
-                    method: 'PUT',
+                const data = await response.json();
+
+                if (data.success) {
+                    displayLogDetail(data.data);
+                } else {
+                    alert('Detaylar yüklenemedi: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error loading log details:', error);
+                alert('Hata oluştu!');
+            }
+        }
+
+        function displayLogDetail(logData) {
+            const modal = document.getElementById('logDetailModal');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('logDetailContent');
+
+            const scenario = logData.scenario;
+            const routes = logData.routes;
+
+            title.textContent = `📦 Scenario #${scenario.id} - Detaylar`;
+
+            let html = `
+                <div style="background: var(--bg-primary); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">💰 Maliyet Özeti</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                        <div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Toplam Mesafe</div>
+                            <div style="color: var(--text-primary); font-size: 1.25rem; font-weight: 600;">${scenario.total_distance.toFixed(1)} km</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Toplam Maliyet</div>
+                            <div style="color: var(--accent-green); font-size: 1.25rem; font-weight: 600;">${scenario.total_cost.toFixed(2)} TL</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Teslim Edilen</div>
+                            <div style="color: var(--text-primary); font-size: 1.25rem; font-weight: 600;">${scenario.delivered_count} kargo</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Ortalama/Kargo</div>
+                            <div style="color: var(--text-primary); font-size: 1.25rem; font-weight: 600;">${(scenario.total_cost / scenario.delivered_count).toFixed(2)} TL</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 style="margin: 1.5rem 0 1rem 0; color: var(--text-primary);">🚗 Rotalar (${routes.length})</h3>
+            `;
+
+            routes.forEach((route, index) => {
+                const routePath = route.stops.map(s => s.district_name).join(' → ');
+                const cargoIds = route.stops.filter(s => s.cargo_id).map(s => `#${s.cargo_id}`).join(', ');
+
+                // Calculate weight percentage
+                const weightPercentage = route.capacity_kg > 0
+                    ? ((route.total_weight / route.capacity_kg) * 100).toFixed(1)
+                    : 0;
+
+                // Color based on capacity usage
+                const weightColor = weightPercentage > 90 ? 'var(--error)' :
+                    weightPercentage > 70 ? 'var(--warning)' :
+                        'var(--success)';
+
+                html += `
+                    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+                            Rota ${index + 1}: ${routePath}
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            <div>📏 Mesafe: ${route.total_distance.toFixed(1)} km</div>
+                            <div>🚗 Araç: ${route.vehicle_type_name || 'N/A'}</div>
+                            <div>📦 Kargolar: ${cargoIds || 'Yok'}</div>
+                            <div style="color: ${weightColor}; font-weight: 600;">
+                                ⚖️ Yük: ${route.total_weight.toFixed(1)} / ${route.capacity_kg} kg (${weightPercentage}%)
+                            </div>
+                        </div>
+                        <div style="background: var(--bg-secondary); border-radius: 4px; height: 8px; overflow: hidden;">
+                            <div style="background: ${weightColor}; height: 100%; width: ${weightPercentage}%; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = html;
+            modal.style.display = 'block';
+        }
+
+        function closeLogDetail() {
+            document.getElementById('logDetailModal').style.display = 'none';
+        }
+
+        // Load logs on page load
+        setTimeout(() => {
+            loadLogs();
+        }, 1000);
+
+        // ===== BRANCH MANAGEMENT =====
+        let addBranchMode = false;
+        let tempBranchCoords = null;
+
+        function handleMapClick(e) {
+            if (!addBranchMode) return;
+
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+
+            console.log('Map clicked:', lat, lng);
+            showAddBranchModal(lat, lng);
+        }
+
+        function enableAddBranchMode() {
+            addBranchMode = true;
+            document.getElementById('addBranchBtn').style.display = 'none';
+            document.getElementById('addBranchInfo').style.display = 'block';
+            if (map) map.getContainer().style.cursor = 'crosshair';
+        }
+
+        function disableAddBranchMode() {
+            addBranchMode = false;
+            document.getElementById('addBranchBtn').style.display = 'block';
+            document.getElementById('addBranchInfo').style.display = 'none';
+            if (map) map.getContainer().style.cursor = '';
+        }
+
+        function showAddBranchModal(lat, lng) {
+            tempBranchCoords = { lat, lng };
+            document.getElementById('modalCoordinates').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            document.getElementById('branchNameInput').value = '';
+            document.getElementById('addBranchModal').style.display = 'flex';
+        }
+
+        function closeAddBranchModal() {
+            document.getElementById('addBranchModal').style.display = 'none';
+            tempBranchCoords = null;
+        }
+
+        async function confirmAddBranch() {
+            const name = document.getElementById('branchNameInput').value.trim();
+
+            if (!name) {
+                alert('⚠️ Lütfen şube adı girin!');
+                return;
+            }
+
+            if (!tempBranchCoords) {
+                alert('❌ Koordinat bilgisi eksik!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/districts`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({
-                        cost_per_km: parseFloat(costPerKm),
-                        vehicle_costs: vehicleCosts
+                        name: name,
+                        latitude: tempBranchCoords.lat,
+                        longitude: tempBranchCoords.lng
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    alert('✅ Ayarlar kaydedildi!');
-                    closeSettings();
+                    alert(`✅ ${name} şubesi başarıyla eklendi!`);
+                    closeAddBranchModal();
+                    disableAddBranchMode();
+
+                    // Reload districts and update UI
+                    await loadDistricts();
+                    await loadBranchesList();
+                    addDistrictMarkers();
                 } else {
-                    alert('❌ ' + data.error);
+                    alert('❌ Hata: ' + data.error);
                 }
             } catch (error) {
-                console.error('Save error:', error);
-                alert('❌ Kaydetme hatası!');
+                console.error('Add branch error:', error);
+                alert('❌ Şube eklenirken hata oluştu!');
             }
         }
 
-        function closeSettings() {
-            document.getElementById('settingsModal').style.display = 'none';
-        }
-
-        // Auth
-        async function checkAuth() {
+        async function loadBranchesList() {
             try {
-                const response = await fetch(`${API_URL}/auth/status`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/districts`, {
+                    credentials: 'include'
+                });
                 const data = await response.json();
 
-                if (!data.authenticated || !data.user || data.user.role !== 'admin') {
-                    window.location.href = 'login.html';
-                    return;
+                if (data.success) {
+                    displayBranchesList(data.data);
                 }
-
-                document.getElementById('adminName').textContent = data.user.username;
             } catch (error) {
-                console.error('Auth error:', error);
-                window.location.href = 'login.html';
+                console.error('Load branches error:', error);
             }
         }
 
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = 'login.html';
-        });
+        function displayBranchesList(branches) {
+            const tbody = document.getElementById('branchesTableBody');
 
-        // Initialize
-        checkAuth();
-        loadPendingCargos();
+            if (branches.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                            Henüz şube yok
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
 
-        // Initialize map on page load
-        setTimeout(() => {
-            initMap();
-            loadDistricts(); // Load and display district markers
-        }, 500);
+            tbody.innerHTML = branches.map(branch => `
+                <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;"
+                    onmouseover="this.style.background='var(--bg-primary)'"
+                    onmouseout="this.style.background='transparent'">
+                    <td style="padding: 1rem; color: var(--text-primary);">#${branch.id}</td>
+                    <td style="padding: 1rem; color: var(--text-primary); font-weight: 500;">${branch.name}</td>
+                    <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                        ${parseFloat(branch.latitude).toFixed(6)}, ${parseFloat(branch.longitude).toFixed(6)}
+                    </td>
+                    <td style="padding: 1rem; text-align: center;">
+                        <button onclick="deleteBranch(${branch.id}, '${branch.name.replace(/'/g, "\\'")}')" 
+                                class="btn" 
+                                style="background: var(--error); color: white; padding: 0.5rem 1rem; font-size: 0.9rem;">
+                            🗑️ Sil
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
-        setInterval(refresh, 30000); // Auto-refresh every 30s
+        async function deleteBranch(id, name) {
+            if (!confirm(`❓ "${name}" şubesini silmek istediğinizden emin misiniz?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/districts/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`✅ ${data.message}`);
+
+                    // Reload districts and update UI
+                    await loadDistricts();
+                    await loadBranchesList();
+                    addDistrictMarkers();
+                } else {
+                    alert('❌ Hata: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Delete branch error:', error);
+                alert('❌ Şube silinirken hata oluştu!');
+            }
+        }
+
+        function toggleBranchList() {
+            const container = document.getElementById('branchListContainer');
+            const btn = document.getElementById('toggleBranchListBtn');
+
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                btn.textContent = '📋 Şube Listesini Gizle';
+                // Load branches when opening
+                loadBranchesList();
+            } else {
+                container.style.display = 'none';
+                btn.textContent = '📋 Şube Listesini Göster';
+            }
+        }
     </script>
 </body>
 
 </html>
+```

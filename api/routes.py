@@ -52,6 +52,124 @@ def get_districts():
             'error': str(e)
         }), 500
 
+@api.route('/districts', methods=['POST'])
+@login_required
+def add_district():
+    """
+    Yeni şube/ilçe ekle
+    
+    POST /districts
+    Body:
+        {
+            "name": "Yeni Şube",
+            "latitude": 40.7654,
+            "longitude": 29.9407
+        }
+    
+    Response:
+        {
+            "success": true,
+            "data": {
+                "id": 20,
+                "name": "Yeni Şube",
+                "latitude": 40.7654,
+                "longitude": 29.9407
+            }
+        }
+    """
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        
+        # Validation
+        if not name or not latitude or not longitude:
+            return jsonify({
+                'success': False,
+                'error': 'İsim, enlem ve boylam zorunludur'
+            }), 400
+        
+        # Insert new district
+        district_id = execute_insert(
+            "INSERT INTO districts (name, latitude, longitude) VALUES (%s, %s, %s)",
+            (name, float(latitude), float(longitude))
+        )
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'id': district_id,
+                'name': name,
+                'latitude': float(latitude),
+                'longitude': float(longitude)
+            }
+        }), 201
+        
+    except Exception as e:
+        print(f"❌ Add district error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@api.route('/districts/<int:district_id>', methods=['DELETE'])
+@login_required
+def delete_district(district_id):
+    """
+    Şube/ilçe sil
+    
+    DELETE /districts/<id>
+    
+    Response:
+        {
+            "success": true,
+            "message": "Şube silindi"
+        }
+    """
+    try:
+        # Check if district exists
+        district = execute_query("SELECT id, name FROM districts WHERE id = %s", (district_id,))
+        
+        if not district:
+            return jsonify({
+                'success': False,
+                'error': 'Şube bulunamadı'
+            }), 404
+        
+        # Check if district is used in any cargo
+        cargo_count = execute_query(
+            "SELECT COUNT(*) as count FROM cargos WHERE destination_district_id = %s",
+            (district_id,)
+        )[0]['count']
+        
+        if cargo_count > 0:
+            return jsonify({
+                'success': False,
+                'error': f'Bu şube {cargo_count} kargoda kullanılıyor, silinemez'
+            }), 400
+        
+        # Delete district
+        execute_insert(
+            "DELETE FROM districts WHERE id = %s",
+            (district_id,),
+            return_id=False
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'{district[0]["name"]} şubesi silindi'
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Delete district error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @api.route('/scenarios', methods=['POST'])
 def create_scenario():
     """
