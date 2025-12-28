@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giriş - Kargo Sistemi</title>
+    <title>Kayıt Ol - Kargo Sistemi</title>
     <style>
         * {
             margin: 0;
@@ -22,22 +22,22 @@
             color: #f1f5f9;
         }
 
-        .login-container {
+        .register-container {
             background: #1e293b;
             padding: 3rem;
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             border: 1px solid #334155;
         }
 
-        .login-header {
+        .register-header {
             text-align: center;
             margin-bottom: 2rem;
         }
 
-        .login-header h1 {
+        .register-header h1 {
             font-size: 2rem;
             font-weight: 700;
             background: linear-gradient(135deg, #0ea5e9, #06b6d4);
@@ -47,7 +47,7 @@
             margin-bottom: 0.5rem;
         }
 
-        .login-header p {
+        .register-header p {
             color: #94a3b8;
             font-size: 0.95rem;
         }
@@ -121,58 +121,95 @@
             font-size: 0.9rem;
             display: none;
         }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #334155;
+        }
+
+        .login-link p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .login-link a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .login-link a:hover {
+            color: #06b6d4;
+        }
     </style>
 </head>
 
 <body>
-    <div class="login-container">
-        <div class="login-header">
+    <div class="register-container">
+        <div class="register-header">
             <h1>📦 Kargo Sistemi</h1>
-            <p>Hesabınıza giriş yapın</p>
+            <p>Yeni hesap oluşturun</p>
         </div>
 
         <div id="errorMsg" class="error"></div>
         <div id="successMsg" class="success"></div>
 
-        <form id="loginForm">
+        <form id="registerForm">
             <div class="form-group">
                 <label for="username">Kullanıcı Adı</label>
-                <input type="text" id="username" required autocomplete="username">
+                <input type="text" id="username" required autocomplete="username" minlength="3"
+                    placeholder="En az 3 karakter">
             </div>
 
             <div class="form-group">
                 <label for="password">Şifre</label>
-                <input type="password" id="password" required autocomplete="current-password">
+                <input type="password" id="password" required autocomplete="new-password" minlength="6"
+                    placeholder="En az 6 karakter">
             </div>
 
-            <button type="submit" class="btn">Giriş Yap</button>
+            <div class="form-group">
+                <label for="confirmPassword">Şifre Tekrar</label>
+                <input type="password" id="confirmPassword" required autocomplete="new-password" minlength="6">
+            </div>
+
+            <button type="submit" class="btn">Kayıt Ol</button>
         </form>
 
-        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #334155;">
-            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 0.75rem;">Hesabınız yok mu?</p>
-            <a href="register.html"
-                style="color: #0ea5e9; text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
-                📝 Kayıt Ol
-            </a>
+        <div class="login-link">
+            <p>Zaten hesabınız var mı?</p>
+            <a href="login.html">🔐 Giriş Yap</a>
         </div>
     </div>
 
     <script>
         const API_URL = 'http://localhost:5002/api';
 
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
             const errorMsg = document.getElementById('errorMsg');
             const successMsg = document.getElementById('successMsg');
 
             errorMsg.style.display = 'none';
             successMsg.style.display = 'none';
 
+            // Password match check
+            if (password !== confirmPassword) {
+                errorMsg.textContent = 'Şifreler eşleşmiyor!';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
             try {
-                const response = await fetch(`${API_URL}/auth/login`, {
+                const response = await fetch(`${API_URL}/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -182,22 +219,19 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    successMsg.textContent = 'Giriş başarılı! Yönlendiriliyorsunuz...';
+                    successMsg.textContent = '✅ Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...';
                     successMsg.style.display = 'block';
 
                     setTimeout(() => {
-                        if (data.role === 'admin') {
-                            window.location.href = 'admin.html';
-                        } else {
-                            window.location.href = 'index.html';
-                        }
-                    }, 500);
+                        window.location.href = 'login.html';
+                    }, 1500);
                 } else {
-                    errorMsg.textContent = data.error || 'Giriş başarısız!';
+                    errorMsg.textContent = data.error || 'Kayıt başarısız!';
                     errorMsg.style.display = 'block';
                 }
             } catch (error) {
-                errorMsg.textContent = 'Bağlantı hatası!';
+                console.error('Register error:', error);
+                errorMsg.textContent = 'Bağlantı hatası! Sunucu çalışıyor mu?';
                 errorMsg.style.display = 'block';
             }
         });

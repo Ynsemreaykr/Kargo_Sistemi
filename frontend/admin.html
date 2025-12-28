@@ -882,7 +882,8 @@
             }
 
             function updateStats() {
-                const totalWeight = allCargos.reduce((sum, c) => sum + parseFloat(c.weight_kg), 0);
+                // FIX: Multiply weight_kg by quantity
+                const totalWeight = allCargos.reduce((sum, c) => sum + (parseFloat(c.weight_kg) * c.quantity), 0);
                 const users = new Set(allCargos.map(c => c.user_id));
 
                 document.getElementById('totalCargos').textContent = allCargos.length;

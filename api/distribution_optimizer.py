@@ -1,15 +1,15 @@
 """
-Optimized Distribution Algorithm
-Handles vehicle selection, capacity optimization, and route planning
+Basit Kargo Dağıtım Algoritması
+Greedy Nearest Neighbor yaklaşımı ile
 """
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import math
 
 
 class DistributionOptimizer:
     """
-    Advanced distribution algorithm with bin packing and route optimization
+    Basit dağıtım algoritması - Nearest Neighbor
     """
     
     def __init__(self, cursor, system_params):
@@ -19,59 +19,166 @@ class DistributionOptimizer:
     
     def optimize_distribution(self, cargos: List[Dict], mode: str, start_location: int) -> Dict[str, Any]:
         """
-        Main optimization function
+        Basit dağıtım optimizasyonu
         
         Args:
-            cargos: List of cargo dictionaries with id, weight_kg, quantity, destination_district_id
-            mode: 'LIMITED', 'UNLIMITED', or 'RENTAL'
-            start_location: Starting district ID
+            cargos: [{'id': 1, 'weight_kg': 100, 'quantity': 2, 'destination_district_id': 5}, ...]
+            mode: 'LIMITED' veya 'UNLIMITED'
+            start_location: Başlangıç district ID
             
         Returns:
-            Dictionary with success status, vehicle assignments, and routes
+            {'success': True, 'routes': [...], ...}
         """
-        # Step 1: Get available vehicles
+        print(f"\n{'='*60}")
+        print(f"🎯 DAĞITIM ALGORİTMASI BAŞLIYOR")
+        print(f"{'='*60}")
+        print(f"Mode: {mode}")
+        print(f"Başlangıç: District #{start_location}")
+        print(f"Kargo sayısı: {len(cargos)}")
+        
+        # ADIM 1: Araçları al
         vehicles = self._get_available_vehicles(mode)
-        
         if not vehicles:
-            return {
-                'success': False,
-                'error': 'Kullanılabilir araç bulunamadı!'
-            }
+            return {'success': False, 'error': 'Kullanılabilir araç bulunamadı!'}
         
-        # Step 2: Expand cargos by quantity (each item separately)
-        expanded_cargos = self._expand_cargos(cargos)
+        print(f"Araç sayısı: {len(vehicles)}")
         
-        # Step 3: Sort cargos by weight (descending) for First Fit Decreasing
-        expanded_cargos.sort(key=lambda c: c['weight_kg'], reverse=True)
+        # ADIM 2: Kargoları ilçelere göre grupla
+        cargo_by_district = {}
+        for cargo in cargos:
+            dist_id = cargo['destination_district_id']
+            if dist_id not in cargo_by_district:
+                cargo_by_district[dist_id] = []
+            cargo_by_district[dist_id].append(cargo)
         
-        # Step 4: Assign cargos to vehicles using bin packing
-        assignments = self._assign_cargos_to_vehicles(expanded_cargos, vehicles, mode)
+        print(f"\n📦 KARGO DAĞILIMI:")
+        for dist_id, cargo_list in cargo_by_district.items():
+            total_weight = sum(float(c['weight_kg']) * c.get('quantity', 1) for c in cargo_list)
+            print(f"  District #{dist_id}: {total_weight}kg")
         
-        if not assignments['success']:
-            return assignments
+        # ADIM 3: Teslim edilecek ilçeler
+        undelivered_districts = set(cargo_by_district.keys())
         
-        # Step 5: Optimize routes for each vehicle
-        optimized_routes = self._optimize_routes(assignments['vehicle_assignments'], start_location)
+        # ADIM 4: Her araç için rota oluştur (Greedy Nearest Neighbor)
+        routes = []
+        for vehicle in vehicles:
+            if not undelivered_districts:
+                print(f"\n✅ Tüm kargolar teslim edildi!")
+                break
+            
+            print(f"\n{'='*60}")
+            print(f"🚛 ARAÇ: {vehicle['name']} (Kapasite: {vehicle['capacity_kg']}kg)")
+            print(f"{'='*60}")
+            
+            # Rota değişkenleri
+            route_order = [start_location]  # Başlangıç
+            route_cargos = []
+            current_weight = 0.0
+            current_position = start_location
+            
+            # Nearest Neighbor ile ilçeleri ziyaret et
+            while True:
+                # En yakın teslim edilmemiş ilçeyi bul
+                nearest_dist_id = None
+                min_distance = float('inf')
+                
+                for dist_id in list(undelivered_districts):
+                    distance = self._get_distance(current_position, dist_id)
+                    if distance < min_distance:
+                        min_distance = distance
+                        nearest_dist_id = dist_id
+                
+                if nearest_dist_id is None:
+                    break  # Hiç ilçe kalmadı
+                
+                # Bu ilçedeki kargoların toplam ağırlığı
+                cargos_here = cargo_by_district[nearest_dist_id]
+                weight_here = sum(float(c['weight_kg']) * c.get('quantity', 1) for c in cargos_here)
+                
+                # Kapasite kontrolü
+                if current_weight + weight_here <= float(vehicle['capacity_kg']):
+                    # SIĞ  IYOR - Ekle!
+                    route_order.append(nearest_dist_id)
+                    route_cargos.extend(cargos_here)
+                    current_weight += weight_here
+                    current_position = nearest_dist_id
+                    undelivered_districts.remove(nearest_dist_id)
+                    print(f"  ✓ District #{nearest_dist_id} eklendi: {weight_here}kg (Toplam: {current_weight}/{vehicle['capacity_kg']}kg)")
+                else:
+                    # SĞMIYOR - Bu araç doldu
+                    print(f"  ⚠️  District #{nearest_dist_id} sığmıyor ({weight_here}kg)")
+                    print(f"     Araç kapasitesi doldu: {current_weight}/{vehicle['capacity_kg']}kg")
+                    break
+            
+            # Rota oluştu mu?
+            if len(route_order) > 1:  # En az 1 teslimat var
+                # Mesafe hesapla
+                total_distance = self._calculate_route_distance(start_location, route_order[1:])
+                
+                routes.append({
+                    'vehicle': vehicle,
+                    'route_order': route_order,
+                    'cargos':route_cargos,
+                    'total_weight': current_weight,
+                    'distance': float(total_distance),
+                    'distance_cost': float(total_distance * self.cost_per_km),
+                    'vehicle_cost': float(vehicle.get('cost_per_route', 100.0)),
+                    'cost': float(total_distance * self.cost_per_km) + float(vehicle.get('cost_per_route', 100.0)),
+                    'capacity': float(vehicle['capacity_kg']),
+                    'utilization': (current_weight / float(vehicle['capacity_kg'])) * 100
+                })
+                
+                print(f"\n📊 ROTA ÖZETİ:")
+                print(f"   Mesafe: {total_distance:.2f}km")
+                print(f"   Ağırlık: {current_weight:.1f}kg")
+                print(f"   Kapasite Kullanımı: {routes[-1]['utilization']:.1f}%")
+                print(f"   Maliyet: {routes[-1]['cost']:.2f}TL")
         
-        # Step 6: Calculate total costs
-        total_cost = sum(route['cost'] for route in optimized_routes)
-        total_distance = sum(route['distance'] for route in optimized_routes)
+        # ADIM 5: Teslim edilemeyen kargolar var mı?
+        if undelivered_districts:
+            if mode == 'LIMITED':
+                # LIMITED modda hata ver
+                remaining_weight = sum(
+                    sum(c['weight_kg'] * c.get('quantity', 1) for c in cargo_by_district[dist_id])
+                    for dist_id in undelivered_districts
+                )
+                return {
+                    'success': False,
+                    'error': f'Yetersiz araç kapasitesi! {len(undelivered_districts)} ilçeye teslimat yapılamadı.',
+                    'remaining_cargos': [c for dist_id in undelivered_districts for c in cargo_by_district[dist_id]],
+                    'total_remaining_weight': remaining_weight
+                }
+            elif mode == 'UNLIMITED':
+                # UNLIMITED modda araç kirala ve devam et (basitleştirilmiş - şimdilik hata ver)
+                return {
+                   'success': False,
+                    'error': 'UNLIMITED mode kiralama henüz implement edilmedi!'
+                }
+        
+        # BAŞARILI!
+        total_cost = sum(r['cost'] for r in routes)
+        total_distance = sum(r['distance'] for r in routes)
+        
+        print(f"\n{'='*60}")
+        print(f"✅ DAĞITIM BAŞARILI!")
+        print(f"{'='*60}")
+        print(f"Kullanılan araç: {len(routes)}")
+        print(f"Toplam mesafe: {total_distance:.2f}km")
+        print(f"Toplam maliyet: {total_cost:.2f}TL")
+        print(f"{'='*60}\n")
         
         return {
             'success': True,
-            'routes': optimized_routes,
+            'routes': routes,
             'total_cost': total_cost,
             'total_distance': total_distance,
-            'delivered_count': len(expanded_cargos),
-            'vehicle_count': len(optimized_routes)
+            'delivered_count': len(cargos),
+            'vehicle_count': len(routes)
         }
     
     def _get_available_vehicles(self, mode: str) -> List[Dict]:
-        """
-        Get available vehicles based on mode
-        """
+        """Araçları al"""
         if mode == 'RENTAL':
-            # For rental mode, get vehicle types that can be rented
             self.cursor.execute("""
                 SELECT 
                     vt.id as vehicle_type_id,
@@ -83,7 +190,6 @@ class DistributionOptimizer:
                 ORDER BY vt.capacity_kg ASC
             """)
         else:
-            # For LIMITED/UNLIMITED, get owned vehicles
             self.cursor.execute("""
                 SELECT 
                     v.id as vehicle_id,
@@ -99,205 +205,17 @@ class DistributionOptimizer:
             """)
         
         vehicles = self.cursor.fetchall()
-        return [dict(v) for v in vehicles]
-    
-    def _expand_cargos(self, cargos: List[Dict]) -> List[Dict]:
-        """
-        Expand cargos by quantity (treat each item separately)
-        
-        Example: 1 cargo with weight=200kg, quantity=3 
-                 becomes 3 separate items of 200kg each
-        """
-        expanded = []
-        for cargo in cargos:
-            quantity = cargo.get('quantity', 1)
-            for i in range(quantity):
-                expanded.append({
-                    'id': cargo['id'],
-                    'weight_kg': cargo['weight_kg'],
-                    'destination_district_id': cargo['destination_district_id'],
-                    'user_id': cargo.get('user_id'),
-                    'item_index': i  # Track which item this is
-                })
-        return expanded
-    
-    def _assign_cargos_to_vehicles(self, cargos: List[Dict], vehicles: List[Dict], mode: str) -> Dict:
-        """
-        Assign cargos to vehicles using First Fit Decreasing bin packing
-        
-        This is optimal for minimizing number of vehicles used
-        """
-        vehicle_assignments = []
-        remaining_cargos = cargos.copy()
-        
-        # Sort vehicles by capacity (smallest first) to minimize cost
-        vehicles_sorted = sorted(vehicles, key=lambda v: v['capacity_kg'])
-        
-        while remaining_cargos:
-            # Try to fit remaining cargos into smallest available vehicle
-            assigned = False
-            
-            for vehicle in vehicles_sorted:
-                batch = []
-                batch_weight = 0
-                capacity = vehicle['capacity_kg']
-                
-                # Greedy: pack as many cargos as possible into this vehicle
-                for cargo in remaining_cargos[:]:
-                    if batch_weight + cargo['weight_kg'] <= capacity:
-                        batch.append(cargo)
-                        batch_weight += cargo['weight_kg']
-                        remaining_cargos.remove(cargo)
-                
-                if batch:
-                    vehicle_assignments.append({
-                        'vehicle': vehicle.copy(),
-                        'cargos': batch,
-                        'total_weight': batch_weight,
-                        'capacity': capacity,
-                        'utilization': (batch_weight / capacity) * 100
-                    })
-                    assigned = True
-                    break  # Move to next batch
-            
-            if not assigned:
-                # No vehicle can fit remaining cargos
-                if mode == 'LIMITED':
-                    return {
-                        'success': False,
-                        'error': f'Yetersiz araç kapasitesi! {len(remaining_cargos)} kargo taşınamıyor.',
-                        'remaining_cargos': remaining_cargos,
-                        'total_remaining_weight': sum(c['weight_kg'] for c in remaining_cargos)
-                    }
-                elif mode == 'UNLIMITED':
-                    # Rent additional vehicle
-                    rented_vehicle = self._rent_vehicle(remaining_cargos)
-                    vehicles_sorted.append(rented_vehicle)
-                    continue
-                else:
-                    return {
-                        'success': False,
-                        'error': 'Kiralık araç bulunamadı!'
-                    }
-        
-        return {
-            'success': True,
-            'vehicle_assignments': vehicle_assignments
-        }
-    
-    def _rent_vehicle(self, remaining_cargos: List[Dict]) -> Dict:
-        """
-        Rent smallest vehicle that can fit remaining cargos
-        """
-        total_weight = sum(c['weight_kg'] for c in remaining_cargos)
-        
-        # Get vehicle types
-        self.cursor.execute("""
-            SELECT id, name, capacity_kg
-            FROM vehicle_types
-            WHERE capacity_kg >= %s
-            ORDER BY capacity_kg ASC
-            LIMIT 1
-        """, (total_weight,))
-        
-        vehicle_type = self.cursor.fetchone()
-        
-        if not vehicle_type:
-            # Get largest vehicle if none can fit all
-            self.cursor.execute("""
-                SELECT id, name, capacity_kg
-                FROM vehicle_types
-                ORDER BY capacity_kg DESC
-                LIMIT 1
-            """)
-            vehicle_type = self.cursor.fetchone()
-        
-        return {
-            'vehicle_type_id': vehicle_type['id'],
-            'name': vehicle_type['name'],
-            'capacity_kg': vehicle_type['capacity_kg'],
-            'cost_per_route': 100.0,  # Default cost
-            'is_rented': True
-        }
-    
-    def _optimize_routes(self, vehicle_assignments: List[Dict], start_location: int) -> List[Dict]:
-        """
-        Optimize delivery routes using nearest neighbor heuristic
-        """
-        optimized_routes = []
-        
-        for assignment in vehicle_assignments:
-            vehicle = assignment['vehicle']
-            cargos = assignment['cargos']
-            
-            # Get unique destinations
-            destinations = list(set(c['destination_district_id'] for c in cargos))
-            
-            # Optimize order using nearest neighbor
-            route_order = self._nearest_neighbor_tsp(start_location, destinations)
-            
-            # Calculate total distance
-            total_distance = self._calculate_route_distance(start_location, route_order)
-            
-            # Calculate cost
-            distance_cost = total_distance * self.cost_per_km
-            vehicle_cost = float(vehicle.get('cost_per_route', 100.0))
-            total_cost = distance_cost + vehicle_cost
-            
-            optimized_routes.append({
-                'vehicle': vehicle,
-                'cargos': cargos,
-                'route_order': [start_location] + route_order,
-                'distance': total_distance,
-                'distance_cost': distance_cost,
-                'vehicle_cost': vehicle_cost,
-                'cost': total_cost,
-                'total_weight': assignment['total_weight'],
-                'utilization': assignment['utilization']
-            })
-        
-        return optimized_routes
-    
-    def _nearest_neighbor_tsp(self, start: int, destinations: List[int]) -> List[int]:
-        """
-        Nearest neighbor heuristic for TSP
-        """
-        if not destinations:
-            return []
-        
-        route = []
-        current = start
-        remaining = destinations.copy()
-        
-        while remaining:
-            # Find nearest destination
-            nearest = min(remaining, key=lambda d: self._get_distance(current, d))
-            route.append(nearest)
-            remaining.remove(nearest)
-            current = nearest
-        
-        return route
-    
-    def _calculate_route_distance(self, start: int, route_order: List[int]) -> float:
-        """
-        Calculate total distance for a route
-        """
-        total_distance = 0
-        current = start
-        
-        for dest in route_order:
-            total_distance += self._get_distance(current, dest)
-            current = dest
-        
-        # Return to start
-        total_distance += self._get_distance(current, start)
-        
-        return total_distance
+        # Convert Decimal to float
+        result = []
+        for v in vehicles:
+            vehicle_dict = dict(v)
+            vehicle_dict['capacity_kg'] = float(vehicle_dict['capacity_kg'])
+            vehicle_dict['cost_per_route'] = float(vehicle_dict.get('cost_per_route', 100.0))
+            result.append(vehicle_dict)
+        return result
     
     def _get_distance(self, from_id: int, to_id: int) -> float:
-        """
-        Get distance between two districts (Haversine formula)
-        """
+        """İki ilçe arası mesafe (Haversine)"""
         self.cursor.execute("""
             SELECT latitude, longitude
             FROM districts
@@ -319,4 +237,18 @@ class DistributionOptimizer:
         a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
         
-        return 6371 * c  # Earth radius in km
+        return 6371 * c  # km
+    
+    def _calculate_route_distance(self, start: int, route_order: List[int]) -> float:
+        """Rota toplam mesafesi"""
+        total_distance = 0
+        current = start
+        
+        for dest in route_order:
+            total_distance += self._get_distance(current, dest)
+            current = dest
+        
+        # Başlangıca dön
+        total_distance += self._get_distance(current, start)
+        
+        return total_distance
