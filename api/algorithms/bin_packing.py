@@ -3,6 +3,7 @@ Bin Packing Algorithm - First Fit Decreasing
 Kargoları araçlara optimal şekilde dağıtır
 """
 
+
 from typing import List, Dict, Any
 
 

@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Tuple
 from .utils import calculate_distance_matrix, calculate_route_distance, get_district_by_id
 
 
+
 def nearest_neighbor_algorithm(
     cargos: List[Dict[str, Any]],
     districts: List[Dict[str, Any]],

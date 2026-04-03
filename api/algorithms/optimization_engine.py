@@ -12,6 +12,7 @@ from .route_optimizer import create_route_from_assignment, optimize_with_enroute
 from .utils import calculate_distance_matrix
 
 
+
 def analyze_cargos(cargos: List[Dict]) -> Dict:
     """
     Kargoları analiz et

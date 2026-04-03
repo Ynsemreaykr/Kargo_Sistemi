@@ -6,6 +6,7 @@ Mesafe hesaplama ve matris oluşturma
 import math
 from typing import List, Dict, Any
 
+
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     İki nokta arasındaki mesafeyi Haversine formülü ile hesaplar (km cinsinden)

@@ -3,6 +3,7 @@ Geographic Clustering - Kargoları Coğrafi Olarak Kümele
 Yakın ilçelerdeki kargoları birleştir
 """
 
+
 from typing import List, Dict, Any, Set
 
 

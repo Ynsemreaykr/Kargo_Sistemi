@@ -14,6 +14,7 @@ from .graph_algorithms import (
 )
 
 
+
 def solve_vrp_graph_based(
     graph: DeliveryGraph,
     vehicles: List[Dict],

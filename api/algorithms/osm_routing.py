@@ -9,6 +9,7 @@ import os
 from typing import List, Dict, Tuple, Any, Optional
 from pathlib import Path
 
+
 # OSRM Public API endpoint
 OSRM_BASE_URL = "http://router.project-osrm.org/route/v1/driving"
 

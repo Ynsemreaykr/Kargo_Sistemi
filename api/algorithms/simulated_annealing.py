@@ -9,6 +9,7 @@ from typing import List, Dict, Tuple
 from .utils import calculate_route_distance
 
 
+
 def simulated_annealing_optimize(
     initial_route: List[int],
     distance_matrix: Dict[Tuple[int, int], float],

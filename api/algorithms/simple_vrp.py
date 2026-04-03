@@ -6,6 +6,7 @@ Karmaşık şeyler bırakıldı, sadece ÇALIŞAN kod
 from typing import List, Dict
 
 
+
 def advanced_vrp_solver(
     cargos: List[Dict],
     districts: List[Dict],
