@@ -163,11 +163,11 @@ def register():
         # Hash password
         password_hash = generate_password_hash(password)
         
-        # Yeni kullanıcı ekle (varsayılan olarak USER rolü ve sahte email)
+        # Yeni kullanıcı ekle (varsayılan olarak user rolü ve sahte email)
         email = f"{username}@example.com"
         insert_query = """
             INSERT INTO users (username, password_hash, email, role)
-            VALUES (%s, %s, %s, 'USER')
+            VALUES (%s, %s, %s, 'user')
         """
         user_id = execute_insert(insert_query, (username, password_hash, email))
 
@@ -209,7 +209,7 @@ def register():
             'data': {
                 'user_id': user_id,
                 'username': username,
-                'role': 'USER'
+                'role': 'user'
             },
             'message': 'Kayıt başarılı! Şimdi giriş yapabilirsiniz.'
         }), 201
