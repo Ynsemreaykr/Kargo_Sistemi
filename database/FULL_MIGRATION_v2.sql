@@ -74,6 +74,13 @@ ADD COLUMN IF NOT EXISTS mode VARCHAR(20) DEFAULT 'LIMITED';
 ALTER TABLE scenarios 
 ADD COLUMN IF NOT EXISTS remaining_cargos INTEGER DEFAULT 0;
 
+ALTER TABLE scenarios 
+ADD COLUMN IF NOT EXISTS total_distance NUMERIC DEFAULT 0;
+
+ALTER TABLE scenarios 
+ADD COLUMN IF NOT EXISTS total_cost NUMERIC DEFAULT 0;
+
+
 -- Eski 'scenario_type' kolonunu 'mode' olarak kullan
 DO $$
 BEGIN
