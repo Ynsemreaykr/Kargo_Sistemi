@@ -2,21 +2,28 @@
 
 Kocaeli Üniversitesi - Yazılım Laboratuvarı III kapsamında geliştirilen, Kocaeli ilçeleri arasında kargo dağıtım süreçlerini, araç yüklerini ve teslimat rotalarını optimize eden web tabanlı otomasyon projesi.
 
+![Proje Önizlemesi](docs/screenshots/project_preview.png)
+
 ---
 
 ## 📸 Ekran Görüntüleri
 
-### 1. 👤 Kullanıcı Arayüzü (Kullanıcı Paneli & Harita)
+### 1. 🔑 Giriş Arayüzü (Premium Tasarım)
+Cam efekti (glassmorphism), yavaşça hareket eden ambient arka plan küreleri, parlayan input odaklanmaları ve mikro animasyonlar içeren modern giriş sayfası.
+
+![Giriş Ekranı](docs/screenshots/login_page.png)
+
+### 2. 👤 Kullanıcı Arayüzü (Kullanıcı Paneli & Harita)
 Kullanıcıların yeni kargo gönderisi oluşturabildiği, kargolarının durumunu takip edebildiği ve entegre Leaflet.js haritası üzerinde şubeleri görselleştirebildiği arayüz.
 
 ![Kullanıcı Paneli](docs/screenshots/user_dashboard.png)
 
-### 2. 👑 Yönetici Paneli (Dağıtım Optimizasyonu)
+### 3. 👑 Yönetici Paneli (Dağıtım Optimizasyonu)
 Yöneticilerin bekleyen kargoları seçerek **Greedy**, **Simulated Annealing** veya **Hybrid** optimizasyon algoritmalarıyla dağıtım senaryoları ürettiği ve akıllı araç kiralama (LIMITED/UNLIMITED) kararları aldığı ekran.
 
 ![Yönetici Paneli](docs/screenshots/admin_dashboard.png)
 
-### 3. 📍 Şube Yönetimi & Loglama
+### 4. 📍 Şube Yönetimi & Loglama
 Yöneticilerin harita üzerinden veya liste aracılığıyla şube ekleyip/silebildiği, geçmiş dağıtım senaryolarını detaylı maliyet analizleriyle raporlayabildiği yönetim ekranı.
 
 ![Şube Yönetimi ve Raporlama](docs/screenshots/admin_branches.png)
