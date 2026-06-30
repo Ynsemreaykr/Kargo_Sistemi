@@ -2,8 +2,6 @@
 
 Kocaeli Üniversitesi - Yazılım Laboratuvarı III kapsamında geliştirilen, Kocaeli ilçeleri arasında kargo dağıtım süreçlerini, araç yüklerini ve teslimat rotalarını optimize eden web tabanlı otomasyon projesi.
 
-![Proje Önizlemesi](docs/screenshots/project_preview.png)
-
 ---
 
 ## 📸 Ekran Görüntüleri
