@@ -46,7 +46,10 @@ def init_pool():
 
 
 def get_connection():
-    """Havuzdan bir bağlantı al"""
+    """Havuzdan bir bağlantı al (Gerekirse havuzu başlat)"""
+    global connection_pool
+    if connection_pool is None:
+        init_pool()
     if connection_pool:
         return connection_pool.getconn()
     return None

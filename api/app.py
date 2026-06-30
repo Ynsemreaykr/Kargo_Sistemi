@@ -31,10 +31,6 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 # Initialize session
 Session(app)
 
-# Veritabanı bağlantı havuzunu başlat (Gunicorn/WSGI ile çalıştırıldığında havuzun oluşması için)
-init_pool()
-
-
 
 # CORS ayarları (frontend'den erişim için)
 import re
