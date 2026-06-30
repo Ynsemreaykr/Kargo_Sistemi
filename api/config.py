@@ -30,8 +30,10 @@ def init_pool():
         # DATABASE_URL varsa doğrudan kullan (Neon/Render uyumluluğu için)
         database_url = os.getenv('DATABASE_URL')
         if database_url:
+            print("🔌 [DATABASE] DATABASE_URL environment variable detected. Connecting to cloud database...")
             conninfo = database_url
         else:
+            print("⚠️ [DATABASE] DATABASE_URL NOT found! Falling back to localhost (DB_CONFIG)...")
             # psycopg3 connection string oluştur
             conninfo = f"host={DB_CONFIG['host']} port={DB_CONFIG['port']} dbname={DB_CONFIG['dbname']} user={DB_CONFIG['user']} password={DB_CONFIG['password']}"
         
@@ -39,7 +41,7 @@ def init_pool():
         print("✓ Veritabanı bağlantı havuzu oluşturuldu")
         return True
     except Exception as e:
-        print(f"✗ Veritabanı bağlantı hatası: {e}")
+        print(f"✗ Veritabanı bağlantı havuzu oluşturulurken hata: {e}")
         return False
 
 
