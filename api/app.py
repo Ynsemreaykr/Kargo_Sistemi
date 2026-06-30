@@ -33,7 +33,18 @@ Session(app)
 
 
 # CORS ayarları (frontend'den erişim için)
-CORS(app, supports_credentials=True, origins=['http://localhost:8000', 'http://127.0.0.1:8000'])
+import re
+allowed_origins = [
+    'http://localhost:8000', 
+    'http://127.0.0.1:8000',
+    re.compile(r'^https://.*\.vercel\.app$')
+]
+env_origins = os.getenv('CORS_ORIGINS')
+if env_origins:
+    allowed_origins.extend([o.strip() for o in env_origins.split(',')])
+
+CORS(app, supports_credentials=True, origins=allowed_origins)
+
 
 # Blueprint imports
 from scenario_details import api_details

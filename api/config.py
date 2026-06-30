@@ -27,14 +27,21 @@ def init_pool():
     """Bağlantı havuzunu başlat"""
     global connection_pool
     try:
-        # psycopg3 connection string oluştur
-        conninfo = f"host={DB_CONFIG['host']} port={DB_CONFIG['port']} dbname={DB_CONFIG['dbname']} user={DB_CONFIG['user']} password={DB_CONFIG['password']}"
+        # DATABASE_URL varsa doğrudan kullan (Neon/Render uyumluluğu için)
+        database_url = os.getenv('DATABASE_URL')
+        if database_url:
+            conninfo = database_url
+        else:
+            # psycopg3 connection string oluştur
+            conninfo = f"host={DB_CONFIG['host']} port={DB_CONFIG['port']} dbname={DB_CONFIG['dbname']} user={DB_CONFIG['user']} password={DB_CONFIG['password']}"
+        
         connection_pool = ConnectionPool(conninfo, min_size=1, max_size=20)
         print("✓ Veritabanı bağlantı havuzu oluşturuldu")
         return True
     except Exception as e:
         print(f"✗ Veritabanı bağlantı hatası: {e}")
         return False
+
 
 def get_connection():
     """Havuzdan bir bağlantı al"""
