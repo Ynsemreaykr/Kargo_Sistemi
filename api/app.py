@@ -25,8 +25,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'kargo-sistem-secret-key-2025')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False  # Browser kapanınca session bitsin
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# Yerel (HTTP) ve Canlı (HTTPS) uyumluluğu için session cookie ayarları
+is_production = os.getenv('DATABASE_URL') is not None
+app.config['SESSION_COOKIE_SAMESITE'] = 'None' if is_production else 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = True if is_production else False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+
 
 # Initialize session
 Session(app)
