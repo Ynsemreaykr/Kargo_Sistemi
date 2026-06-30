@@ -5,7 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giriş - Kargo Sistemi</title>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-hover: #0284c7;
+            --accent: #06b6d4;
+            --bg-dark: #090d16;
+            --glass-bg: rgba(15, 23, 42, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,34 +29,130 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #f1f5f9;
+            color: var(--text-light);
+            overflow: hidden;
+            position: relative;
         }
 
-        .login-container {
-            background: #1e293b;
-            padding: 3rem;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        /* Ambient Light Blobs */
+        .ambient-blobs {
+            position: absolute;
             width: 100%;
-            max-width: 400px;
-            border: 1px solid #334155;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.25;
+            animation: float-blob 20s infinite alternate ease-in-out;
+        }
+
+        .blob-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            top: -10%;
+            left: -10%;
+            animation-duration: 25s;
+        }
+
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent);
+            bottom: -15%;
+            right: -10%;
+            animation-duration: 30s;
+            animation-delay: -5s;
+        }
+
+        .blob-3 {
+            width: 350px;
+            height: 350px;
+            background: #8b5cf6;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-duration: 20s;
+            animation-delay: -10s;
+        }
+
+        @keyframes float-blob {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                transform: translate(40px, -60px) scale(1.1);
+            }
+            100% {
+                transform: translate(-20px, 30px) scale(0.95);
+            }
+        }
+
+        .login-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 3.5rem 3rem;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                        inset 0 1px 0 var(--glass-border);
+            width: 100%;
+            max-width: 430px;
+            border: 1px solid var(--glass-border);
+            z-index: 10;
+            animation: card-appear 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            position: relative;
+        }
+
+        @keyframes card-appear {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .login-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-header .logo-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: 20px;
+            margin-bottom: 1.25rem;
+            font-size: 2rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
 
         .login-header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--text-light) 30%, var(--text-muted) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -48,111 +160,259 @@
         }
 
         .login-header p {
-            color: #94a3b8;
+            color: var(--text-muted);
             font-size: 0.95rem;
+            font-weight: 400;
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.75rem;
+            position: relative;
+        }
+
+        .form-label-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
         }
 
         label {
-            display: block;
-            margin-bottom: 0.5rem;
             font-weight: 500;
-            color: #cbd5e1;
+            color: #e2e8f0;
             font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            transition: color 0.3s;
+            pointer-events: none;
         }
 
         input {
             width: 100%;
-            padding: 0.75rem 1rem;
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            color: #f1f5f9;
-            font-size: 1rem;
-            transition: all 0.3s;
+            padding: 0.85rem 1rem 0.85rem 2.75rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            color: var(--text-light);
+            font-size: 0.975rem;
+            font-family: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input::placeholder {
+            color: rgba(148, 163, 184, 0.4);
+        }
+
+        input:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.7);
         }
 
         input:focus {
             outline: none;
-            border-color: #0ea5e9;
-            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+            border-color: var(--primary);
+            background: rgba(15, 23, 42, 0.85);
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
         }
 
-        .btn {
+        input:focus + .input-icon {
+            color: var(--primary);
+        }
+
+        .btn-submit {
             width: 100%;
-            padding: 1rem;
-            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            padding: 0.95rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             font-weight: 600;
             font-size: 1rem;
+            font-family: inherit;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(14, 165, 233, 0.35);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
-        .btn:hover {
+        .btn-submit::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.45);
         }
 
-        .error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid #ef4444;
+        .btn-submit:hover::after {
+            left: 100%;
+        }
+
+        .btn-submit:active {
+            transform: translateY(-0.5px);
+        }
+
+        .btn-submit.loading {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .alert-banner {
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            animation: alert-shake 0.4s ease;
+        }
+
+        @keyframes alert-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        .alert-banner.error {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.25);
             color: #fca5a5;
-            padding: 0.75rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            display: none;
         }
 
-        .success {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid #10b981;
-            color: #6ee7b7;
-            padding: 0.75rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+        .alert-banner.success {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: #a7f3d0;
+        }
+
+        .footer-link-box {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .footer-link-box p {
+            color: var(--text-muted);
             font-size: 0.9rem;
-            display: none;
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-link-box a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .footer-link-box a:hover {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+            transform: translateY(-1px);
         }
     </style>
 </head>
 
 <body>
-    <div class="login-container">
+    <!-- Ambient Blur Background -->
+    <div class="ambient-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- Login Container -->
+    <div class="login-card">
         <div class="login-header">
-            <h1>📦 Kargo Sistemi</h1>
-            <p>Hesabınıza giriş yapın</p>
+            <div class="logo-container">📦</div>
+            <h1>Kargo Sistemi</h1>
+            <p>Yük Taşımacılığı ve Rota Optimizasyonu</p>
         </div>
 
-        <div id="errorMsg" class="error"></div>
-        <div id="successMsg" class="success"></div>
+        <!-- Notification Banners -->
+        <div id="errorMsg" class="alert-banner error">
+            <span>❌</span> <span class="alert-text"></span>
+        </div>
+        <div id="successMsg" class="alert-banner success">
+            <span>✅</span> <span class="alert-text"></span>
+        </div>
 
         <form id="loginForm">
             <div class="form-group">
-                <label for="username">Kullanıcı Adı</label>
-                <input type="text" id="username" required autocomplete="username">
+                <div class="form-label-wrapper">
+                    <label for="username">Kullanıcı Adı</label>
+                </div>
+                <div class="input-wrapper">
+                    <input type="text" id="username" placeholder="Kullanıcı adınızı girin" required autocomplete="username">
+                    <span class="input-icon">👤</span>
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="password">Şifre</label>
-                <input type="password" id="password" required autocomplete="current-password">
+                <div class="form-label-wrapper">
+                    <label for="password">Şifre</label>
+                </div>
+                <div class="input-wrapper">
+                    <input type="password" id="password" placeholder="••••••" required autocomplete="current-password">
+                    <span class="input-icon">🔐</span>
+                </div>
             </div>
 
-            <button type="submit" class="btn">Giriş Yap</button>
+            <button type="submit" class="btn-submit" id="btnSubmit">
+                <span class="spinner" id="btnSpinner"></span>
+                <span id="btnText">Giriş Yap</span>
+            </button>
         </form>
 
-        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #334155;">
-            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 0.75rem;">Hesabınız yok mu?</p>
-            <a href="register.html"
-                style="color: #0ea5e9; text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
-                📝 Kayıt Ol
+        <div class="footer-link-box">
+            <p>Hesabınız yok mu?</p>
+            <a href="register.html">
+                <span>📝</span> Kayıt Olun
             </a>
         </div>
     </div>
@@ -165,13 +425,21 @@
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
             const successMsg = document.getElementById('successMsg');
+            const btnSubmit = document.getElementById('btnSubmit');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const btnText = document.getElementById('btnText');
 
             errorMsg.style.display = 'none';
             successMsg.style.display = 'none';
+
+            // Loading state
+            btnSubmit.classList.add('loading');
+            btnSpinner.style.display = 'block';
+            btnText.textContent = 'Giriş Yapılıyor...';
 
             try {
                 const response = await fetch(`${API_URL}/auth/login`, {
@@ -184,8 +452,9 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    successMsg.textContent = 'Giriş başarılı! Yönlendiriliyorsunuz...';
-                    successMsg.style.display = 'block';
+                    btnText.textContent = 'Yönlendiriliyorsunuz...';
+                    successMsg.querySelector('.alert-text').textContent = 'Giriş başarılı! Hoş geldiniz.';
+                    successMsg.style.display = 'flex';
 
                     setTimeout(() => {
                         if (data.role === 'admin') {
@@ -195,15 +464,23 @@
                         }
                     }, 500);
                 } else {
-                    errorMsg.textContent = data.error || 'Giriş başarısız!';
-                    errorMsg.style.display = 'block';
+                    btnSubmit.classList.remove('loading');
+                    btnSpinner.style.display = 'none';
+                    btnText.textContent = 'Giriş Yap';
+                    
+                    errorMsg.querySelector('.alert-text').textContent = data.error || 'Kullanıcı adı veya şifre hatalı!';
+                    errorMsg.style.display = 'flex';
                 }
             } catch (error) {
-                errorMsg.textContent = 'Bağlantı hatası!';
-                errorMsg.style.display = 'block';
+                btnSubmit.classList.remove('loading');
+                btnSpinner.style.display = 'none';
+                btnText.textContent = 'Giriş Yap';
+
+                errorMsg.querySelector('.alert-text').textContent = 'Bağlantı hatası! Sunucuya erişilemiyor.';
+                errorMsg.style.display = 'flex';
             }
         });
     </script>
 </body>
 
-</html>
+</html>

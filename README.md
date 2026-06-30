@@ -1,209 +1,144 @@
- # 🚚 Kargo İşletme Sistemi
+# 🚚 Kargo Rota Optimizasyon Sistemi v2.0
 
-Kocaeli Üniversitesi - Yazılım Laboratuvarı III  
-Kocaeli ilçeleri arasında kargo optimizasyon sistemi
+Kocaeli Üniversitesi - Yazılım Laboratuvarı III kapsamında geliştirilen, Kocaeli ilçeleri arasında kargo dağıtım süreçlerini, araç yüklerini ve teslimat rotalarını optimize eden web tabanlı otomasyon projesi.
+
+---
+
+## 📸 Ekran Görüntüleri
+
+### 1. 👤 Kullanıcı Arayüzü (Kullanıcı Paneli & Harita)
+Kullanıcıların yeni kargo gönderisi oluşturabildiği, kargolarının durumunu takip edebildiği ve entegre Leaflet.js haritası üzerinde şubeleri görselleştirebildiği arayüz.
+
+![Kullanıcı Paneli](docs/screenshots/user_dashboard.png)
+
+### 2. 👑 Yönetici Paneli (Dağıtım Optimizasyonu)
+Yöneticilerin bekleyen kargoları seçerek **Greedy**, **Simulated Annealing** veya **Hybrid** optimizasyon algoritmalarıyla dağıtım senaryoları ürettiği ve akıllı araç kiralama (LIMITED/UNLIMITED) kararları aldığı ekran.
+
+![Yönetici Paneli](docs/screenshots/admin_dashboard.png)
+
+### 3. 📍 Şube Yönetimi & Loglama
+Yöneticilerin harita üzerinden veya liste aracılığıyla şube ekleyip/silebildiği, geçmiş dağıtım senaryolarını detaylı maliyet analizleriyle raporlayabildiği yönetim ekranı.
+
+![Şube Yönetimi ve Raporlama](docs/screenshots/admin_branches.png)
+
+---
+
+## 🛠️ Teknolojiler & Kütüphaneler
+
+### Backend (Flask API)
+- **Flask 3.0.0 & Python 3.12+** - Uygulama sunucusu ve API katmanı
+- **PostgreSQL (psycopg 3.1.18 & psycopg-pool)** - Neon.tech üzerinde barındırılan bulut veritabanı ve performanslı bağlantı havuzu
+- **Flask-Session (filesystem)** - Güvenli ve tarayıcı kapanınca sonlanan oturum yönetimi
+- **Werkzeug (security)** - Güvenli şifre hash'leme ve doğrulama
+
+### Frontend (Modern UI)
+- **Vanilla HTML5 & CSS3** - Modern göze hitap eden, cam (glassmorphism) efektli ve animasyonlu karanlık tema (dark mode) tasarımı
+- **Leaflet.js (v1.9.4)** - Harita üzerinde şube konumlandırma, rota çizimi ve interaktif görselleştirme
+- **OpenStreetMap API & OSRM (Open Source Routing Machine)** - Gerçek yol mesafelerini ve rota geometrisini hesaplama
 
 ---
 
 ## 📥 GitHub'dan İlk Kurulum
 
-Projeyi yeni klonladıysanız, **sırasıyla** şu adımları izleyin:
+Projeyi bilgisayarınıza klonladıktan sonra **sırasıyla** aşağıdaki adımları takip edin:
 
-### 1️⃣ Python Bağımlılıklarını Yükle
+### 1️⃣ Python Bağımlılıklarını Yükleyin
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2️⃣ PostgreSQL Veritabanını Hazırla
-
-**a) PostgreSQL'de veritabanı oluştur:**
-```sql
-CREATE DATABASE kargo_db;
-```
-
-**b) Şemaları yükle:**
-```bash
-psql -U postgres -d kargo_db -f database/schema.sql
-psql -U postgres -d kargo_db -f database/seed_data.sql
-```
+### 2️⃣ Cloud PostgreSQL (Neon.tech) veya Local DB Hazırlığı
+Veritabanını sıfırdan oluşturmak ve v2.0 şemasına yükseltmek için:
+- **Eski Şema Kurulumu:** `database/database_setup.sql` dosyasını çalıştırın.
+- **V2.0 Schema Yükseltmesi:** `database/FULL_MIGRATION_v2.sql` dosyasını çalıştırarak tüm eksik sütunları (scenarios.total_distance, routes.route_geometry vb.) ve yeni tabloları otomatik ekleyin.
 
 ### 3️⃣ Veritabanı Bağlantı Ayarları
-
-`api/.env` dosyası oluştur:
+`api/.env` dosyası oluşturun ve bağlantı dizesini yazın:
 ```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=kargo_db
-DB_USER=postgres
-DB_PASSWORD=sizin_postgresql_sifreniz
-SECRET_KEY=rastgele-gizli-anahtar-123
+DATABASE_URL=postgresql://neondb_owner:npg_le3yhId8AWBb@ep-square-paper-asng6koy.c-4.eu-central-1.aws.neon.tech/neondb?sslmode=require
+SECRET_KEY=kargo-sistem-secret-key-2025
 ```
 
-### 4️⃣ Kullanıcı Sistemini Kur
+### 4️⃣ Başlangıç Kullanıcılarını Kurun
 ```bash
 cd api
 python quick_setup.py
 ```
-
-Bu adım:
-- ✅ `users` tablosuna `password_hash` kolonu ekler
-- ✅ Varsayılan kullanıcıları oluşturur:
-  - 👑 Admin: `admin` / `admin123`
-  - 👤 User: `user` / `user123`
+Bu adım, veritabanına varsayılan kullanıcıları ekler:
+- 👑 Admin: `admin` / `admin123`
+- 👤 Test Kullanıcısı: `testuser` / `user123`
 
 ---
 
-## 🚀 Kullanım
+## 🚀 Sistemi Çalıştırma
 
-### Kolay Yol (Windows):
+### 💻 Kolay Yol (Windows):
+Proje dizininde yer alan toplu iş dosyasını çalıştırmanız yeterlidir:
 ```bash
 start.bat
 ```
-Bu komut hem backend'i hem frontend'i başlatır ve tarayıcıda login sayfasını açar.
+Bu betik hem backend API sunucusunu hem de frontend web sunucusunu eşzamanlı olarak başlatarak tarayıcınızda login sayfasını açar.
 
-### Manuel Yol:
-
-**Terminal 1 - Backend:**
+### 🔧 Manuel Yol:
+**Terminal 1 (Backend):**
 ```bash
 cd api
 python app.py
 ```
-
-**Terminal 2 - Frontend:**
+**Terminal 2 (Frontend):**
 ```bash
 cd frontend
 python -m http.server 8000
 ```
-
-**Tarayıcı:**
-```
-http://localhost:8000/login.html
-```
+Tarayıcınızdan `http://localhost:8000/login.html` adresine giderek sistemi kullanmaya başlayabilirsiniz.
 
 ---
 
-## 🎯 Varsayılan Kullanıcılar
+## 🎯 Giriş Bilgileri
 
-| Kullanıcı | Şifre | Rol | Sayfa |
-|-----------|-------|-----|-------|
-| admin | admin123 | ADMIN | admin.html (Admin Panel) |
-| user | user123 | USER | index.html (Kargo Sistemi) |
+| Kullanıcı Adı | Şifre | Rol | Yönlendirilen Sayfa |
+|---|---|---|---|
+| **admin** | `admin123` | ADMIN | admin.html (Yönetici Paneli) |
+| **testuser** | `user123` | USER | user_dashboard.html (Kullanıcı Paneli) |
 
 ---
 
-## 📁 Proje Yapısı
+## 📁 Proje Klasör Yapısı
 
 ```
-yazlab3/
-├── api/                    # Backend (Flask)
-│   ├── app.py             # Ana uygulama
-│   ├── auth.py            # Kimlik doğrulama
-│   ├── routes.py          # API endpoint'leri
-│   ├── config.py          # Veritabanı bağlantısı
-│   ├── quick_setup.py     # Kullanıcı kurulum scripti
-│   └── .env               # Veritabanı ayarları (oluşturulacak)
+Kargo_Sistemi/
+├── api/                    # Flask Backend Modülleri
+│   ├── app.py             # Sunucu başlatma ve session yönetimi
+│   ├── auth.py            # Oturum açma, kayıt ve yetkilendirme (decoratörler)
+│   ├── routes.py          # Harita, şube ve senaryo API uç noktaları
+│   ├── admin_cargo.py     # Yönetici kargo onay/iptal işlemleri
+│   ├── admin_distribution.py # Rota optimizasyon tetikleme ve kayıt
+│   ├── config.py          # Veritabanı bağlantı havuzu (psycopg-pool)
+│   └── .env               # Gizli anahtarlar ve DB URL
 │
-├── frontend/              # Frontend (HTML/CSS/JS)
-│   ├── login.html         # Giriş/Kayıt sayfası
-│   ├── index.html         # Kargo sistemi (User)
-│   ├── admin.html         # Admin paneli
-│   ├── app.js             # Ana JavaScript
-│   └── styles.css         # Stiller
+├── frontend/              # Arayüz Dosyaları (HTML/CSS/JS)
+│   ├── login.html         # Premium giriş sayfası
+│   ├── register.html      # Premium kayıt olma sayfası
+│   ├── user_dashboard.html # Kullanıcı paneli ve Leaflet şube haritası
+│   ├── admin.html         # Yönetici paneli ve dinamik rota çizim ekranı
+│   └── styles.css         # Ortak tasarım tokenleri ve stiller
 │
-├── database/              # Veritabanı şemaları
-│   ├── schema.sql         # Tablo yapıları
-│   ├── seed_data.sql      # Başlangıç verileri
-│   └── add_auth.sql       # Auth migration (manuel kullanım)
+├── database/              # SQL Şemaları ve Göç Betikleri
+│   ├── database_setup.sql # İlk şema ve test verileri
+│   └── FULL_MIGRATION_v2.sql # Veritabanını v2.0 sürümüne taşıyan script
 │
-├── setup.bat              # İlk kurulum scripti
-├── start.bat              # Sistemi başlat
-├── requirements.txt       # Python bağımlılıkları
-└── README.md              # Bu dosya
+├── docs/
+│   └── screenshots/       # Proje ekran görüntüleri
+│
+├── requirements.txt       # Python paket bağımlılıkları
+├── setup.bat              # İlk kurulum otomasyonu
+└── start.bat              # Uygulamayı başlatma betiği
 ```
 
 ---
 
-## 🔧 Teknolojiler
-
-**Backend:**
-- Flask 3.0.0
-- PostgreSQL (psycopg 3.1.18)
-- Flask-Session (session-based auth)
-- Werkzeug (password hashing)
-
-**Frontend:**
-- Vanilla HTML/CSS/JavaScript
-- Leaflet.js (harita)
-- OpenStreetMap
-
----
-
-## ⚙️ Özellikler
-
-- ✅ Session-based kimlik doğrulama
-- ✅ Admin ve User rolleri
-- ✅ Kullanıcı kayıt sistemi
-- ✅ Kargo senaryo oluşturma
-- ✅ Harita üzerinde rota görselleştirme
-- ✅ İlçeler arası mesafe hesaplama
-
----
-
-## 🆘 Sorun Giderme
-
-### "Bağlantı hatası. Backend çalışıyor mu?"
-
-**Çözüm:**
-1. Backend terminalini kontrol edin
-2. `http://localhost:5002` adresinde API çalışıyor mu?
-3. `.env` dosyasındaki veritabanı şifresi doğru mu?
-
-### "No module named 'psycopg'"
-
-**Çözüm:**
-```bash
-pip install -r requirements.txt
-```
-
-### PostgreSQL bağlantı hatası
-
-**Çözüm:**
-1. PostgreSQL servisi çalışıyor mu?
-2. `kargo_db` veritabanı oluşturulmuş mu?
-3. `api/.env` dosyasındaki bilgiler doğru mu?
-
----
-
-## 📝 Lisans
-
-Kocaeli Üniversitesi - Yazılım Laboratuvarı III Projesi
-
----
-
-## 👨‍💻 Geliştirme
-
-**Sadece iki .bat dosyası var:**
-
-1. **setup.bat** - İlk kurulum (sadece 1 kez)
-2. **start.bat** - Sistemi başlat (her seferinde)
-
-**Diğer kullanışlı komutlar:**
-
-```bash
-# Yeni dependency eklediyseniz
-pip freeze > requirements.txt
-
-# Veritabanını sıfırlamak isterseniz
-dropdb kargo_db
-createdb kargo_db
-psql -U postgres -d kargo_db -f database/schema.sql
-psql -U postgres -d kargo_db -f database/seed_data.sql
-python api/quick_setup.py
-```
-
----
-
-**Session Davranışı:**
-- ✅ Tarayıcı açık olduğu sürece giriş yapılı kalır
-- ✅ Tarayıcı kapatılınca session sona erer
-- ✅ Yeniden açınca login ekranına yönlendirilir
+## 📐 Optimizasyon Algoritmaları
+Sistem, kargo dağıtım maliyetlerini ve mesafelerini minimuma indirmek amacıyla 3 farklı algoritma seçeneği sunar:
+1. **Greedy (En Yakın Komşu):** Her adımda mevcut konuma en yakın teslimat noktasına yönelerek hızlı ve basit bir rota çizer.
+2. **Simulated Annealing (Tavlama Benzetimi):** Rotalardaki yerel minimumlardan kaçmak için olasılıksal kabul kriterleri kullanarak global olarak en kısa mesafeli rotayı bulmayı hedefler.
+3. **Hybrid:** İki yaklaşımı birleştirerek en iyi performansı ve en kararlı dağıtım planını üretir.
