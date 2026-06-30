@@ -37,7 +37,7 @@ def admin_required(f):
                 'auth_required': True
             }), 401
         
-        if session.get('role') != 'ADMIN':
+        if session.get('role', '').lower() != 'admin':
             return jsonify({
                 'success': False,
                 'error': 'Bu işlem için admin yetkisi gerekiyor'
@@ -94,7 +94,7 @@ def login():
         session.clear()
         session['user_id'] = user['id']
         session['username'] = user['username']
-        session['role'] = user['role']
+        session['role'] = user['role'].lower()  # Normalize to lowercase
         
         return jsonify({
             'success': True,
