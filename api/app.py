@@ -31,6 +31,10 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 # Initialize session
 Session(app)
 
+# Veritabanı bağlantı havuzunu başlat (Gunicorn/WSGI ile çalıştırıldığında havuzun oluşması için)
+init_pool()
+
+
 
 # CORS ayarları (frontend'den erişim için)
 import re
@@ -110,7 +114,8 @@ if __name__ == '__main__':
     print("-" * 60)
     
     # Veritabanı bağlantısını başlat
-    if init_pool():
+    from config import connection_pool
+    if connection_pool or init_pool():
         print("✓ Veritabanı bağlantısı başarılı")
         print("-" * 60)
         print("API çalışıyor: http://localhost:5002")
