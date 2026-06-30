@@ -92,6 +92,16 @@ END $$;
 ALTER TABLE routes 
 ADD COLUMN IF NOT EXISTS total_distance NUMERIC DEFAULT 0;
 
+ALTER TABLE routes 
+ADD COLUMN IF NOT EXISTS distance NUMERIC DEFAULT 0;
+
+ALTER TABLE routes 
+ADD COLUMN IF NOT EXISTS cost NUMERIC DEFAULT 0;
+
+ALTER TABLE routes 
+ADD COLUMN IF NOT EXISTS route_geometry TEXT;
+
+
 -- Eski 'distance' kolonunu 'total_distance' olarak kullan
 DO $$
 BEGIN
@@ -162,6 +172,10 @@ CREATE TABLE IF NOT EXISTS system_parameters (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Eksik kolonları ekle
+ALTER TABLE system_parameters 
+ADD COLUMN IF NOT EXISTS default_vehicle_count INTEGER DEFAULT 3;
 
 -- İlk kayıt yoksa ekle
 INSERT INTO system_parameters (id, cost_per_km, default_vehicle_count)
