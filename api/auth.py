@@ -163,12 +163,14 @@ def register():
         # Hash password
         password_hash = generate_password_hash(password)
         
-        # Yeni kullanıcı ekle (varsayılan olarak USER rolü)
+        # Yeni kullanıcı ekle (varsayılan olarak USER rolü ve sahte email)
+        email = f"{username}@example.com"
         insert_query = """
-            INSERT INTO users (username, password_hash, role)
-            VALUES (%s, %s, 'USER')
+            INSERT INTO users (username, password_hash, email, role)
+            VALUES (%s, %s, %s, 'USER')
         """
-        user_id = execute_insert(insert_query, (username, password_hash))
+        user_id = execute_insert(insert_query, (username, password_hash, email))
+
         
         # İzmit ID'sini dinamik olarak al
         izmit_result = execute_query("SELECT id FROM districts WHERE name = 'İzmit' OR name = 'Izmit' LIMIT 1")
