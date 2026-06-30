@@ -6,22 +6,17 @@ Kocaeli Üniversitesi - Yazılım Laboratuvarı III kapsamında geliştirilen, K
 
 ## 📸 Ekran Görüntüleri
 
-### 1. 🔑 Giriş Arayüzü (Premium Tasarım)
-Cam efekti (glassmorphism), yavaşça hareket eden ambient arka plan küreleri, parlayan input odaklanmaları ve mikro animasyonlar içeren modern giriş sayfası.
-
-![Giriş Ekranı](docs/screenshots/login_page.png)
-
-### 2. 👤 Kullanıcı Arayüzü (Kullanıcı Paneli & Harita)
+### 1. 👤 Kullanıcı Arayüzü (Kullanıcı Paneli & Harita)
 Kullanıcıların yeni kargo gönderisi oluşturabildiği, kargolarının durumunu takip edebildiği ve entegre Leaflet.js haritası üzerinde şubeleri görselleştirebildiği arayüz.
 
 ![Kullanıcı Paneli](docs/screenshots/user_dashboard.png)
 
-### 3. 👑 Yönetici Paneli (Dağıtım Optimizasyonu)
+### 2. 👑 Yönetici Paneli (Dağıtım Optimizasyonu)
 Yöneticilerin bekleyen kargoları seçerek **Greedy**, **Simulated Annealing** veya **Hybrid** optimizasyon algoritmalarıyla dağıtım senaryoları ürettiği ve akıllı araç kiralama (LIMITED/UNLIMITED) kararları aldığı ekran.
 
 ![Yönetici Paneli](docs/screenshots/admin_dashboard.png)
 
-### 4. 📍 Şube Yönetimi & Loglama
+### 3. 📍 Şube Yönetimi & Loglama
 Yöneticilerin harita üzerinden veya liste aracılığıyla şube ekleyip/silebildiği, geçmiş dağıtım senaryolarını detaylı maliyet analizleriyle raporlayabildiği yönetim ekranı.
 
 ![Şube Yönetimi ve Raporlama](docs/screenshots/admin_branches.png)
